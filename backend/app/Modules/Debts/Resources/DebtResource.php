@@ -42,6 +42,14 @@ class DebtResource extends JsonResource
 
             'currency' => $this->currency,
 
+            'paid_amount' => number_format($this->paidAmount(), 2, '.', ''),
+
+            'remaining_balance' => number_format($this->remainingBalance(), 2, '.', ''),
+
+            'paid_installments' => $this->paidInstallments(),
+
+            'is_paid' => $this->remainingBalance() <= 0,
+
             'due_date' => $this->due_date?->toDateString(),
 
             'description' => $this->description,

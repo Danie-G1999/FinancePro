@@ -19,7 +19,8 @@ import AppTopbar from '../components/layout/AppTopbar.vue'
 
 <style scoped>
 .app-layout {
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     display: flex;
     background: #f5f7fb;
 }
@@ -33,7 +34,11 @@ import AppTopbar from '../components/layout/AppTopbar.vue'
 
 .app-content {
     flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     padding: 28px;
     overflow-x: hidden;
+    overflow-y: auto;
 }
 </style>

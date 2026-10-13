@@ -7,6 +7,7 @@ use App\Modules\Debts\Requests\StoreDebtRequest;
 use App\Modules\Debts\Requests\UpdateDebtRequest;
 use App\Modules\Debts\Resources\DebtResource;
 use App\Modules\Debts\Services\DebtService;
+use App\Modules\Expenses\Resources\ExpenseResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -46,6 +47,16 @@ class DebtController extends Controller
         );
 
         return new DebtResource($debt);
+    }
+
+    public function payments(Request $request, int $id)
+    {
+        $payments = $this->service->getPayments(
+            $request->user()->id,
+            $id
+        );
+
+        return ExpenseResource::collection($payments);
     }
 
     public function update(UpdateDebtRequest $request, int $id): JsonResponse

@@ -19,6 +19,8 @@ class AccountRepository extends BaseRepository implements AccountRepositoryInter
     {
         return $this->model
             ->newQuery()
+            ->withSum('incomes', 'amount')
+            ->withSum('expenses', 'amount')
             ->where('user_id', $userId)
             ->orderBy('name')
             ->get();

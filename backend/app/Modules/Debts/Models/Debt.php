@@ -5,8 +5,10 @@ namespace App\Modules\Debts\Models;
 use App\Models\User;
 use App\Modules\Debts\Enums\DebtType;
 use App\Modules\Debts\Enums\PaymentFrequency;
+use App\Modules\Expenses\Models\Expense;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Debt extends Model
 {
@@ -47,5 +49,30 @@ class Debt extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function paidAmount(): float
+    {
+        return (float) ($this->payments_sum_amount
+            ?? $this->payments()->sum('amount'));
+    }
+
+    public function remainingBalance(): float
+    {
+        return max(
+            0,
+            round((float) $this->total_amount - $this->paidAmount(), 2)
+        );
+    }
+
+    public function paidInstallments(): int
+    {
+        return (int) ($this->payments_count
+            ?? $this->payments()->count());
     }
 }

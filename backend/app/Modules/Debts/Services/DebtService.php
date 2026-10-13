@@ -36,6 +36,13 @@ class DebtService extends BaseService
         return $this->repository->findByUserOrFail($userId, $id);
     }
 
+    public function getPayments(int $userId, int $id): Collection
+    {
+        $debt = $this->findForUser($userId, $id);
+
+        return $this->repository->getPayments($debt->getKey());
+    }
+
     public function updateForUser(
         int $userId,
         int $id,

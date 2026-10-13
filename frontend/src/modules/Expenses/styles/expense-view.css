@@ -1,0 +1,639 @@
+.expense-page {
+    display: flex;
+    flex-direction: column;
+
+    gap: 24px;
+
+    width: 100%;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.page-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+
+    color: var(--color-text-primary);
+}
+
+.page-description {
+    margin-top: 5px;
+
+    color: var(--color-text-muted);
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.btn {
+    min-height: 40px;
+
+    padding: 0 16px;
+
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-hover);
+
+    box-shadow: var(--shadow-sm);
+}
+
+
+.btn-secondary {
+    background: white;
+    border-color: var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+}
+
+.btn-danger {
+    background: var(--color-danger);
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+}
+
+.expense-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.expense-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 32px;
+    height: 32px;
+
+    border: 0;
+    border-radius: var(--radius-md);
+
+    background: transparent;
+    color: var(--color-text-muted);
+
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.icon-button:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-primary);
+}
+
+.icon-button.danger:hover {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 16px;
+
+    background: rgba(17, 24, 39, 0.5);
+}
+
+.modal {
+    width: 100%;
+    max-width: 420px;
+
+    padding: 24px;
+
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.modal h2 {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.modal p {
+    margin-top: 8px;
+
+    color: var(--color-text-muted);
+
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    margin-top: 20px;
+}
+
+/* =========================================================
+   SUCCESS
+   ========================================================= */
+
+.alert {
+    padding: 12px 14px;
+
+    border-radius: var(--radius-md);
+
+    font-size: 13px;
+}
+
+.alert-success {
+    background: var(--color-success-light);
+    color: var(--color-success);
+
+    border: 1px solid #bbf7d0;
+}
+
+.alert-error {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+
+    border: 1px solid #fecaca;
+}
+
+
+/* =========================================================
+   FORM CARD
+   ========================================================= */
+
+.form-card {
+    flex-shrink: 0;
+
+    background: var(--color-surface);
+
+    border: 1px solid var(--color-border);
+
+    border-radius: var(--radius-lg);
+
+    box-shadow: var(--shadow-sm);
+
+    overflow: hidden;
+}
+
+.form-card-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 20px 24px;
+
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.form-card-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.form-card-header p {
+    margin-top: 4px;
+
+    color: var(--color-text-muted);
+
+    font-size: 12px;
+}
+
+.form-card-body {
+    padding: 24px;
+}
+
+.close-button {
+    width: 32px;
+    height: 32px;
+
+    border: 0;
+    border-radius: var(--radius-md);
+
+    background: transparent;
+
+    color: var(--color-text-muted);
+
+    font-size: 24px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.close-button:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.empty-state {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    min-height: 360px;
+
+    padding: 40px;
+
+    background: var(--color-surface);
+
+    border: 1px dashed var(--color-border-dark);
+
+    border-radius: var(--radius-lg);
+}
+
+.empty-icon {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 64px;
+    height: 64px;
+
+    margin-bottom: 16px;
+
+    border-radius: 50%;
+
+    background: var(--color-primary-light);
+
+    color: var(--color-primary);
+
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.empty-state h2 {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.empty-state p {
+    max-width: 400px;
+
+    margin-top: 8px;
+    margin-bottom: 20px;
+
+    color: var(--color-text-muted);
+
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.state-container {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: 250px;
+
+    gap: 12px;
+
+    color: var(--color-text-muted);
+
+    font-size: 13px;
+}
+
+.loading-spinner {
+    width: 28px;
+    height: 28px;
+
+    border: 3px solid #e5e7eb;
+    border-top-color: var(--color-primary);
+
+    border-radius: 50%;
+
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   debts GRID
+   ========================================================= */
+
+.expense-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(280px, 1fr)
+        );
+
+    gap: 16px;
+}
+
+
+/* =========================================================
+   debt CARD
+   ========================================================= */
+
+.expense-card {
+    display: flex;
+
+    flex-direction: column;
+
+    min-height: 190px;
+
+    background: var(--color-surface);
+
+    border: 1px solid var(--color-border);
+
+    border-radius: var(--radius-lg);
+
+    box-shadow: var(--shadow-sm);
+
+    overflow: hidden;
+
+    transition:
+        box-shadow var(--transition-normal),
+        transform var(--transition-normal);
+}
+
+.expense-card:hover {
+    box-shadow: var(--shadow-md);
+
+    transform: translateY(-1px);
+}
+
+.expense-card-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 18px;
+
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.expense-icon {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    border-radius: var(--radius-md);
+
+    background: var(--color-primary-light);
+
+    color: var(--color-primary);
+
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.expense-card-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.expense-card-header span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+}
+
+.expense-card-body {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    padding: 18px;
+}
+
+.balance-label {
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+}
+
+.balance {
+    color: var(--color-text-primary);
+
+    font-size: 22px;
+    font-weight: 700;
+
+    letter-spacing: -0.5px;
+}
+
+.expense-card-footer {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-top: auto;
+
+    padding: 12px 18px;
+
+    border-top: 1px solid var(--color-border-light);
+}
+
+.expense-status {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+}
+
+.expense-status.active {
+    color: var(--color-success);
+}
+
+.expense-status.active .status-dot {
+    background: var(--color-success);
+}
+
+.expense-status.inactive {
+    color: var(--color-text-muted);
+}
+
+.expense-status.inactive .status-dot {
+    background: var(--color-text-light);
+}
+
+.institution {
+    max-width: 150px;
+
+    overflow: hidden;
+
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 640px) {
+    .page-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+    .page-header .btn {
+        width: 100%;
+    }
+
+    .form-card-body {
+        padding: 18px;
+    }
+
+    .expense-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================================
+   PROGRESS / STATUS
+   ========================================================= */
+
+.progress {
+    height: 8px;
+
+    margin-top: 8px;
+
+    border-radius: 999px;
+
+    background: #e5e7eb;
+
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+
+    border-radius: 999px;
+
+    background: var(--color-primary);
+
+    transition: width var(--transition-normal);
+}
+
+.progress-text {
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+}
+
+.expense-status.pending {
+    color: var(--color-warning);
+}
+
+.expense-status.pending .status-dot {
+    background: var(--color-warning);
+}
+
+.expense-page {
+    flex: 1;
+    min-height: 0;
+}

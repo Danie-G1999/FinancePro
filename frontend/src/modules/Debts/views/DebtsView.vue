@@ -2,8 +2,15 @@
 import { onMounted, ref } from 'vue'
 
 import DebtForm from '../components/DebtForm.vue'
+import DebtPaymentsModal from '../components/DebtPaymentsModal.vue'
 import { useDebtStore } from '../stores/debtStore'
 import { formatMoney } from '../../../utils/money'
+import {
+    extractErrorMessage,
+    showError,
+    showSuccess,
+    withLoading,
+} from '../../../utils/alerts'
 
 const debtStore = useDebtStore()
 
@@ -15,9 +22,7 @@ const debtToDelete = ref(null)
 
 const deleting = ref(false)
 
-const successMessage = ref('')
-
-const errorMessage = ref('')
+const debtWithPayments = ref(null)
 
 function formatDate(value) {
     if (!value) {
@@ -27,14 +32,6 @@ function formatDate(value) {
     const [year, month, day] = value.split('-')
 
     return `${day}/${month}/${year}`
-}
-
-function showSuccess(message) {
-    successMessage.value = message
-
-    setTimeout(() => {
-        successMessage.value = ''
-    }, 4000)
 }
 
 function openCreate() {
@@ -48,17 +45,16 @@ function openEdit(debt) {
 }
 
 async function handleSaveDebt(data) {
-    successMessage.value = ''
-    errorMessage.value = ''
-
     const isEditing = editingDebt.value !== null
 
     try {
-        if (isEditing) {
-            await debtStore.updateDebt(editingDebt.value.id, data)
-        } else {
-            await debtStore.createDebt(data)
-        }
+        await withLoading(
+            isEditing ? 'Guardando cambios...' : 'Guardando deuda...',
+            () =>
+                isEditing
+                    ? debtStore.updateDebt(editingDebt.value.id, data)
+                    : debtStore.createDebt(data)
+        )
 
         showForm.value = false
         editingDebt.value = null
@@ -69,12 +65,12 @@ async function handleSaveDebt(data) {
                 : 'Deuda creada correctamente.'
         )
     } catch (error) {
-        const response = error.response?.data
-
-        errorMessage.value =
-            Object.values(response?.errors ?? {})[0]?.[0] ??
-            response?.message ??
-            'No fue posible guardar la deuda.'
+        showError(
+            extractErrorMessage(
+                error,
+                'No fue posible guardar la deuda.'
+            )
+        )
     }
 }
 
@@ -89,10 +85,11 @@ function askDelete(debt) {
 
 async function confirmDelete() {
     deleting.value = true
-    errorMessage.value = ''
 
     try {
-        await debtStore.deleteDebt(debtToDelete.value.id)
+        await withLoading('Eliminando deuda...', () =>
+            debtStore.deleteDebt(debtToDelete.value.id)
+        )
 
         debtToDelete.value = null
 
@@ -100,9 +97,12 @@ async function confirmDelete() {
     } catch (error) {
         debtToDelete.value = null
 
-        errorMessage.value =
-            error.response?.data?.message ??
-            'No fue posible eliminar la deuda.'
+        showError(
+            extractErrorMessage(
+                error,
+                'No fue posible eliminar la deuda.'
+            )
+        )
     } finally {
         deleting.value = false
     }
@@ -140,23 +140,6 @@ onMounted(() => {
             </button>
 
         </header>
-
-
-        <!-- MESSAGES -->
-
-        <div
-            v-if="successMessage"
-            class="alert alert-success"
-        >
-            {{ successMessage }}
-        </div>
-
-        <div
-            v-if="errorMessage"
-            class="alert alert-error"
-        >
-            {{ errorMessage }}
-        </div>
 
 
         <!-- FORM -->
@@ -298,6 +281,19 @@ onMounted(() => {
                         <button
                             type="button"
                             class="icon-button"
+                            title="Ver pagos"
+                            aria-label="Ver pagos de la deuda"
+                            @click="debtWithPayments = debt"
+                        >
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9" />
+                                <path d="M12 11v5" />
+                                <path d="M12 8h.01" />
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            class="icon-button"
                             title="Editar deuda"
                             aria-label="Editar deuda"
                             @click="openEdit(debt)"
@@ -336,6 +332,18 @@ onMounted(() => {
                     <strong class="balance">
                         {{ formatMoney(debt.total_amount, debt.currency) }}
                     </strong>
+
+                    <span class="progress-text">
+                        Saldo pendiente:
+                        <strong>
+                            {{ formatMoney(debt.remaining_balance, debt.currency) }}
+                        </strong>
+                    </span>
+
+                    <span class="progress-text">
+                        {{ debt.paid_installments }} de
+                        {{ debt.installments }} cuotas pagadas
+                    </span>
 
                     <span class="progress-text">
                         {{ debt.installments }}
@@ -391,6 +399,15 @@ onMounted(() => {
             </article>
 
         </section>
+
+
+        <!-- PAYMENTS -->
+
+        <DebtPaymentsModal
+            v-if="debtWithPayments"
+            :debt="debtWithPayments"
+            @close="debtWithPayments = null"
+        />
 
 
         <!-- DELETE CONFIRMATION -->

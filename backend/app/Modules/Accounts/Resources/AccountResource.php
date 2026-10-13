@@ -22,6 +22,13 @@ class AccountResource extends JsonResource
 
             'initial_balance' => $this->initial_balance,
 
+            'balance' => number_format(
+                $this->currentBalance(),
+                2,
+                '.',
+                ''
+            ),
+
             'currency' => $this->currency,
 
             'is_active' => $this->is_active,

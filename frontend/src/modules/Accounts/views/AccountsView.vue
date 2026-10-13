@@ -3,6 +3,12 @@ import { onMounted, ref } from 'vue'
 
 import AccountForm from '../components/AccountForm.vue'
 import { useAccountStore } from '../stores/accountStore'
+import {
+    extractErrorMessage,
+    showError,
+    showSuccess,
+    withLoading,
+} from '../../../utils/alerts'
 
 const accountStore = useAccountStore()
 
@@ -13,10 +19,6 @@ const editingAccount = ref(null)
 const accountToDelete = ref(null)
 
 const deleting = ref(false)
-
-const successMessage = ref('')
-
-const errorMessage = ref('')
 
 function formatMoney(value, currency) {
     const amount = Number(value)
@@ -33,14 +35,6 @@ function formatMoney(value, currency) {
     }
 }
 
-function showSuccess(message) {
-    successMessage.value = message
-
-    setTimeout(() => {
-        successMessage.value = ''
-    }, 4000)
-}
-
 function openCreate() {
     editingAccount.value = null
     showForm.value = true
@@ -52,20 +46,19 @@ function openEdit(account) {
 }
 
 async function handleSaveAccount(data) {
-    successMessage.value = ''
-    errorMessage.value = ''
-
     const isEditing = editingAccount.value !== null
 
     try {
-        if (isEditing) {
-            await accountStore.updateAccount(
-                editingAccount.value.id,
-                data
-            )
-        } else {
-            await accountStore.createAccount(data)
-        }
+        await withLoading(
+            isEditing ? 'Guardando cambios...' : 'Guardando cuenta...',
+            () =>
+                isEditing
+                    ? accountStore.updateAccount(
+                          editingAccount.value.id,
+                          data
+                      )
+                    : accountStore.createAccount(data)
+        )
 
         showForm.value = false
         editingAccount.value = null
@@ -76,12 +69,12 @@ async function handleSaveAccount(data) {
                 : 'Cuenta creada correctamente.'
         )
     } catch (error) {
-        const data = error.response?.data
-
-        errorMessage.value =
-            Object.values(data?.errors ?? {})[0]?.[0] ??
-            data?.message ??
-            'No fue posible guardar la cuenta.'
+        showError(
+            extractErrorMessage(
+                error,
+                'No fue posible guardar la cuenta.'
+            )
+        )
     }
 }
 
@@ -96,11 +89,10 @@ function askDelete(account) {
 
 async function confirmDelete() {
     deleting.value = true
-    errorMessage.value = ''
 
     try {
-        await accountStore.deleteAccount(
-            accountToDelete.value.id
+        await withLoading('Eliminando cuenta...', () =>
+            accountStore.deleteAccount(accountToDelete.value.id)
         )
 
         accountToDelete.value = null
@@ -109,9 +101,12 @@ async function confirmDelete() {
     } catch (error) {
         accountToDelete.value = null
 
-        errorMessage.value =
-            error.response?.data?.message ??
-            'No fue posible eliminar la cuenta.'
+        showError(
+            extractErrorMessage(
+                error,
+                'No fue posible eliminar la cuenta.'
+            )
+        )
     } finally {
         deleting.value = false
     }
@@ -151,25 +146,6 @@ onMounted(() => {
             </button>
 
         </header>
-
-
-        <!-- =================================================
-             SUCCESS MESSAGE
-        ================================================== -->
-
-        <div
-            v-if="successMessage"
-            class="alert alert-success"
-        >
-            {{ successMessage }}
-        </div>
-
-        <div
-            v-if="errorMessage"
-            class="alert alert-error"
-        >
-            {{ errorMessage }}
-        </div>
 
 
         <!-- =================================================
@@ -362,13 +338,13 @@ onMounted(() => {
                 <div class="account-card-body">
 
                     <span class="balance-label">
-                        Saldo inicial
+                        Saldo actual
                     </span>
 
                     <strong class="balance">
                         {{
                             formatMoney(
-                                account.initial_balance,
+                                account.balance,
                                 account.currency
                             )
                         }}

@@ -11,4 +11,6 @@ interface DebtRepositoryInterface extends BaseRepositoryInterface
     public function getByUser(int $userId): Collection;
 
     public function findByUserOrFail(int $userId, int $id): Model;
+
+    public function getPayments(int $debtId): Collection;
 }

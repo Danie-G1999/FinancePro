@@ -7,6 +7,12 @@ export const debtService = {
         return response.data
     },
 
+    async getPayments(id) {
+        const response = await api.get(`/debts/${id}/payments`)
+
+        return response.data
+    },
+
     async create(data) {
         const response = await api.post('/debts', data)
 

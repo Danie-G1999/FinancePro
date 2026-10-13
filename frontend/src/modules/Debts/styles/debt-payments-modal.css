@@ -1,0 +1,182 @@
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 16px;
+
+    background: rgba(17, 24, 39, 0.5);
+}
+
+.modal {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    width: 100%;
+    max-width: 560px;
+    max-height: 80vh;
+
+    padding: 24px;
+
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.modal-header h2 {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.modal-header p {
+    margin-top: 3px;
+
+    color: var(--color-text-muted);
+
+    font-size: 13px;
+}
+
+.close-button {
+    width: 32px;
+    height: 32px;
+
+    border: 0;
+    border-radius: var(--radius-md);
+
+    background: transparent;
+    color: var(--color-text-muted);
+
+    font-size: 24px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.close-button:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+}
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 20px;
+
+    padding: 12px 14px;
+
+    background: var(--color-primary-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.summary div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.summary span {
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+}
+
+.summary strong {
+    color: var(--color-text-primary);
+
+    font-size: 14px;
+}
+
+.summary .paid {
+    color: var(--color-success);
+}
+
+.summary .pending {
+    color: var(--color-danger);
+}
+
+.state {
+    padding: 24px 12px;
+
+    color: var(--color-text-muted);
+
+    font-size: 13px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.state-error {
+    color: var(--color-danger);
+}
+
+.payments-scroll {
+    min-height: 0;
+
+    overflow: auto;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.payments-table {
+    width: 100%;
+
+    border-collapse: separate;
+    border-spacing: 0;
+
+    font-size: 13px;
+}
+
+.payments-table th {
+    position: sticky;
+    top: 0;
+
+    padding: 10px 14px;
+
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+    font-weight: 600;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.payments-table td {
+    padding: 10px 14px;
+
+    border-bottom: 1px solid var(--color-border-light);
+
+    color: var(--color-text-secondary);
+}
+
+.payments-table tfoot td {
+    border-bottom: 0;
+
+    color: var(--color-text-primary);
+
+    font-weight: 600;
+}
+
+.payments-table .text-right {
+    text-align: right;
+}
+
+.payments-table .amount {
+    font-weight: 700;
+    white-space: nowrap;
+}
