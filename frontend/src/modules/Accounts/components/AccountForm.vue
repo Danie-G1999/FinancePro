@@ -1,19 +1,26 @@
 <script setup>
 import { reactive, ref } from 'vue'
 
+const props = defineProps({
+    account: {
+        type: Object,
+        default: null,
+    },
+})
+
 const emit = defineEmits(['submit', 'cancel'])
 
 const loading = ref(false)
 const errors = ref({})
 
 const form = reactive({
-    name: '',
-    type: 'bank',
-    institution: '',
-    initial_balance: '',
-    currency: 'COP',
-    is_active: true,
-    description: '',
+    name: props.account?.name ?? '',
+    type: props.account?.type ?? 'bank',
+    institution: props.account?.institution ?? '',
+    initial_balance: props.account?.initial_balance ?? '',
+    currency: props.account?.currency ?? 'COP',
+    is_active: props.account?.is_active ?? true,
+    description: props.account?.description ?? '',
 })
 
 const accountTypes = [
@@ -42,6 +49,37 @@ const accountTypes = [
         label: 'Otro',
     },
 ]
+
+function formatBalanceInput(raw) {
+    const cleaned = String(raw).replace(/[^\d,]/g, '')
+    const [integer, ...rest] = cleaned.split(',')
+    const decimals = rest.join('').slice(0, 2)
+    const grouped = integer
+        .replace(/^0+(?=\d)/, '')
+        .replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+    return cleaned.includes(',')
+        ? `${grouped},${decimals}`
+        : grouped
+}
+
+function toNumericString(display) {
+    return display.replace(/\./g, '').replace(',', '.')
+}
+
+const balanceDisplay = ref(
+    props.account
+        ? formatBalanceInput(
+              String(props.account.initial_balance).replace('.', ',')
+          )
+        : ''
+)
+
+function handleBalanceInput(event) {
+    balanceDisplay.value = formatBalanceInput(event.target.value)
+    event.target.value = balanceDisplay.value
+    form.initial_balance = toNumericString(balanceDisplay.value)
+}
 
 function validate() {
     errors.value = {}
@@ -210,16 +248,16 @@ function handleCancel() {
 
                 <input
                     id="account-balance"
-                    v-model="form.initial_balance"
-                    type="number"
+                    :value="balanceDisplay"
+                    type="text"
+                    inputmode="decimal"
                     class="form-input money-input"
                     :class="{
                         'input-error': errors.initial_balance,
                     }"
                     placeholder="0"
-                    min="0"
-                    step="0.01"
                     :disabled="loading"
+                    @input="handleBalanceInput"
                 />
             </div>
 
@@ -274,7 +312,7 @@ function handleCancel() {
         </div>
 
         <!-- Estado -->
-        <div class="form-group">
+        <div class="form-group form-group-full">
             <label class="switch-container">
                 <input
                     v-model="form.is_active"
@@ -297,7 +335,7 @@ function handleCancel() {
         </div>
 
         <!-- Descripción -->
-        <div class="form-group">
+        <div class="form-group form-group-full">
             <label
                 for="account-description"
                 class="form-label"
@@ -341,288 +379,11 @@ function handleCancel() {
                 </span>
 
                 <span v-else>
-                    Guardar cuenta
+                    {{ account ? 'Guardar cambios' : 'Guardar cuenta' }}
                 </span>
             </button>
         </div>
     </form>
 </template>
 
-<style scoped>
-.account-form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-
-.form-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-text-primary);
-}
-
-.required {
-    color: var(--color-danger);
-    margin-left: 2px;
-}
-
-.form-input {
-    min-height: 42px;
-    width: 100%;
-
-    padding: 0 12px;
-
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-
-    font-size: 13px;
-
-    transition:
-        border-color var(--transition-fast),
-        box-shadow var(--transition-fast);
-}
-
-.form-input:hover {
-    border-color: var(--color-border-dark);
-}
-
-.form-input:focus {
-    border-color: var(--color-primary);
-
-    box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.form-input:disabled {
-    background: #f9fafb;
-    cursor: not-allowed;
-}
-
-.input-error {
-    border-color: var(--color-danger);
-}
-
-.input-error:focus {
-    border-color: var(--color-danger);
-
-    box-shadow:
-        0 0 0 3px rgba(220, 38, 38, 0.1);
-}
-
-.form-error {
-    color: var(--color-danger);
-    font-size: 11px;
-}
-
-.form-help {
-    color: var(--color-text-muted);
-    font-size: 11px;
-    line-height: 1.5;
-}
-
-.input-money {
-    position: relative;
-}
-
-.currency-prefix {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-
-    transform: translateY(-50%);
-
-    color: var(--color-text-muted);
-
-    font-size: 13px;
-    font-weight: 500;
-
-    z-index: 1;
-}
-
-.money-input {
-    padding-left: 28px;
-}
-
-.form-textarea {
-    min-height: 90px;
-    padding: 10px 12px;
-
-    resize: vertical;
-}
-
-.character-count {
-    align-self: flex-end;
-
-    margin-top: -3px;
-
-    color: var(--color-text-light);
-
-    font-size: 10px;
-}
-
-/* =========================================================
-   SWITCH
-   ========================================================= */
-
-.switch-container {
-    display: flex;
-    align-items: center;
-
-    gap: 10px;
-
-    cursor: pointer;
-}
-
-.switch-container input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.switch {
-    position: relative;
-
-    width: 40px;
-    height: 22px;
-
-    flex-shrink: 0;
-
-    border-radius: 999px;
-
-    background: #d1d5db;
-
-    transition:
-        background var(--transition-fast);
-}
-
-.switch::after {
-    content: '';
-
-    position: absolute;
-
-    width: 16px;
-    height: 16px;
-
-    top: 3px;
-    left: 3px;
-
-    border-radius: 50%;
-
-    background: white;
-
-    box-shadow: var(--shadow-sm);
-
-    transition:
-        transform var(--transition-fast);
-}
-
-.switch-container input:checked + .switch {
-    background: var(--color-primary);
-}
-
-.switch-container input:checked + .switch::after {
-    transform: translateX(18px);
-}
-
-.switch-content {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.switch-label {
-    color: var(--color-text-primary);
-
-    font-size: 13px;
-    font-weight: 500;
-}
-
-.switch-help {
-    color: var(--color-text-muted);
-
-    font-size: 11px;
-}
-
-/* =========================================================
-   ACTIONS
-   ========================================================= */
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-
-    gap: 10px;
-
-    padding-top: 8px;
-
-    border-top: 1px solid var(--color-border-light);
-}
-
-.btn {
-    min-height: 40px;
-
-    padding: 0 16px;
-
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
-
-    font-size: 13px;
-    font-weight: 600;
-
-    transition:
-        background var(--transition-fast),
-        border-color var(--transition-fast),
-        box-shadow var(--transition-fast);
-}
-
-.btn:disabled {
-    opacity: 0.6;
-}
-
-.btn-primary {
-    background: var(--color-primary);
-    color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: var(--color-primary-hover);
-
-    box-shadow: var(--shadow-sm);
-}
-
-.btn-secondary {
-    background: white;
-    border-color: var(--color-border);
-    color: var(--color-text-secondary);
-}
-
-.btn-secondary:hover:not(:disabled) {
-    background: var(--color-surface-hover);
-    border-color: var(--color-border-dark);
-}
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-
-@media (max-width: 640px) {
-    .form-actions {
-        flex-direction: column-reverse;
-        align-items: stretch;
-    }
-
-    .btn {
-        width: 100%;
-    }
-}
-</style>
+<style scoped src="../styles/account-form.css"></style>

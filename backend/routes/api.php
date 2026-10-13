@@ -9,3 +9,4 @@ Route::get('/user', function (Request $request) {
 
 require base_path('app/Modules/Auth/Routes/api.php');
 require base_path('app/Modules/Accounts/Routes/api.php');
+require base_path('app/Modules/Debts/Routes/api.php');

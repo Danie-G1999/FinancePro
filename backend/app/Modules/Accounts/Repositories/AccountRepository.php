@@ -6,6 +6,7 @@ use App\Modules\Accounts\Interfaces\AccountRepositoryInterface;
 use App\Modules\Accounts\Models\Account;
 use App\Shared\Repositories\BaseRepository;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class AccountRepository extends BaseRepository implements AccountRepositoryInterface
 {
@@ -21,5 +22,13 @@ class AccountRepository extends BaseRepository implements AccountRepositoryInter
             ->where('user_id', $userId)
             ->orderBy('name')
             ->get();
+    }
+
+    public function findByUserOrFail(int $userId, int $id): Model
+    {
+        return $this->model
+            ->newQuery()
+            ->where('user_id', $userId)
+            ->findOrFail($id);
     }
 }

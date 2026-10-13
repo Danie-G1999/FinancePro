@@ -40,11 +40,9 @@ class AccountController extends Controller
 
     public function show(Request $request, int $id)
     {
-        $account = $this->service->findOrFail($id);
-
-        abort_unless(
-            $account->user_id === $request->user()->id,
-            403
+        $account = $this->service->findForUser(
+            $request->user()->id,
+            $id
         );
 
         return new AccountResource($account);
@@ -54,14 +52,8 @@ class AccountController extends Controller
         UpdateAccountRequest $request,
         int $id
     ) {
-        $account = $this->service->findOrFail($id);
-
-        abort_unless(
-            $account->user_id === $request->user()->id,
-            403
-        );
-
-        $account = $this->service->update(
+        $account = $this->service->updateForUser(
+            $request->user()->id,
             $id,
             $request->validated()
         );
@@ -74,14 +66,10 @@ class AccountController extends Controller
 
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $account = $this->service->findOrFail($id);
-
-        abort_unless(
-            $account->user_id === $request->user()->id,
-            403
+        $this->service->deleteForUser(
+            $request->user()->id,
+            $id
         );
-
-        $this->service->delete($id);
 
         return response()->json([
             'message' => 'Cuenta eliminada correctamente.',

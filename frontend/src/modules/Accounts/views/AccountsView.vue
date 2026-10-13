@@ -8,32 +8,113 @@ const accountStore = useAccountStore()
 
 const showForm = ref(false)
 
+const editingAccount = ref(null)
+
+const accountToDelete = ref(null)
+
+const deleting = ref(false)
+
 const successMessage = ref('')
 
-async function handleCreateAccount(data) {
-    successMessage.value = ''
+const errorMessage = ref('')
+
+function formatMoney(value, currency) {
+    const amount = Number(value)
 
     try {
-        await accountStore.createAccount(data)
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency,
+            minimumFractionDigits: currency === 'COP' ? 0 : 2,
+            maximumFractionDigits: 2,
+        }).format(amount)
+    } catch {
+        return `${amount.toLocaleString('es-CO')} ${currency}`
+    }
+}
+
+function showSuccess(message) {
+    successMessage.value = message
+
+    setTimeout(() => {
+        successMessage.value = ''
+    }, 4000)
+}
+
+function openCreate() {
+    editingAccount.value = null
+    showForm.value = true
+}
+
+function openEdit(account) {
+    editingAccount.value = account
+    showForm.value = true
+}
+
+async function handleSaveAccount(data) {
+    successMessage.value = ''
+    errorMessage.value = ''
+
+    const isEditing = editingAccount.value !== null
+
+    try {
+        if (isEditing) {
+            await accountStore.updateAccount(
+                editingAccount.value.id,
+                data
+            )
+        } else {
+            await accountStore.createAccount(data)
+        }
 
         showForm.value = false
+        editingAccount.value = null
 
-        successMessage.value =
-            'Cuenta creada correctamente.'
-
-        setTimeout(() => {
-            successMessage.value = ''
-        }, 4000)
-    } catch (error) {
-        console.error(
-            'No fue posible crear la cuenta:',
-            error
+        showSuccess(
+            isEditing
+                ? 'Cuenta actualizada correctamente.'
+                : 'Cuenta creada correctamente.'
         )
+    } catch (error) {
+        const data = error.response?.data
+
+        errorMessage.value =
+            Object.values(data?.errors ?? {})[0]?.[0] ??
+            data?.message ??
+            'No fue posible guardar la cuenta.'
     }
 }
 
 function handleCancel() {
     showForm.value = false
+    editingAccount.value = null
+}
+
+function askDelete(account) {
+    accountToDelete.value = account
+}
+
+async function confirmDelete() {
+    deleting.value = true
+    errorMessage.value = ''
+
+    try {
+        await accountStore.deleteAccount(
+            accountToDelete.value.id
+        )
+
+        accountToDelete.value = null
+
+        showSuccess('Cuenta eliminada correctamente.')
+    } catch (error) {
+        accountToDelete.value = null
+
+        errorMessage.value =
+            error.response?.data?.message ??
+            'No fue posible eliminar la cuenta.'
+    } finally {
+        deleting.value = false
+    }
 }
 
 onMounted(() => {
@@ -64,7 +145,7 @@ onMounted(() => {
                 v-if="!showForm"
                 type="button"
                 class="btn btn-primary"
-                @click="showForm = true"
+                @click="openCreate"
             >
                 + Nueva cuenta
             </button>
@@ -83,6 +164,13 @@ onMounted(() => {
             {{ successMessage }}
         </div>
 
+        <div
+            v-if="errorMessage"
+            class="alert alert-error"
+        >
+            {{ errorMessage }}
+        </div>
+
 
         <!-- =================================================
              CREATE FORM
@@ -97,11 +185,15 @@ onMounted(() => {
 
                 <div>
                     <h2>
-                        Nueva cuenta
+                        {{ editingAccount ? 'Editar cuenta' : 'Nueva cuenta' }}
                     </h2>
 
                     <p>
-                        Registra una nueva cuenta financiera.
+                        {{
+                            editingAccount
+                                ? 'Modifica los datos de la cuenta.'
+                                : 'Registra una nueva cuenta financiera.'
+                        }}
                     </p>
                 </div>
 
@@ -118,7 +210,9 @@ onMounted(() => {
             <div class="form-card-body">
 
                 <AccountForm
-                    @submit="handleCreateAccount"
+                    :key="editingAccount?.id ?? 'new'"
+                    :account="editingAccount"
+                    @submit="handleSaveAccount"
                     @cancel="handleCancel"
                 />
 
@@ -190,7 +284,7 @@ onMounted(() => {
             <button
                 type="button"
                 class="btn btn-primary"
-                @click="showForm = true"
+                @click="openCreate"
             >
                 Crear mi primera cuenta
             </button>
@@ -222,7 +316,7 @@ onMounted(() => {
                         $
                     </div>
 
-                    <div>
+                    <div class="account-info">
                         <h3>
                             {{ account.name }}
                         </h3>
@@ -230,6 +324,36 @@ onMounted(() => {
                         <span>
                             {{ account.type_label }}
                         </span>
+                    </div>
+
+                    <div class="account-actions">
+                        <button
+                            type="button"
+                            class="icon-button"
+                            title="Editar cuenta"
+                            aria-label="Editar cuenta"
+                            @click="openEdit(account)"
+                        >
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                            </svg>
+                        </button>
+
+                        <button
+                            type="button"
+                            class="icon-button danger"
+                            title="Eliminar cuenta"
+                            aria-label="Eliminar cuenta"
+                            @click="askDelete(account)"
+                        >
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18" />
+                                <path d="M8 6V4h8v2" />
+                                <path d="M19 6l-1 14H6L5 6" />
+                                <path d="M10 11v5M14 11v5" />
+                            </svg>
+                        </button>
                     </div>
 
                 </div>
@@ -242,8 +366,12 @@ onMounted(() => {
                     </span>
 
                     <strong class="balance">
-                        {{ account.initial_balance }}
-                        {{ account.currency }}
+                        {{
+                            formatMoney(
+                                account.initial_balance,
+                                account.currency
+                            )
+                        }}
                     </strong>
 
                 </div>
@@ -280,492 +408,51 @@ onMounted(() => {
 
         </section>
 
+
+        <!-- =================================================
+             DELETE CONFIRMATION
+        ================================================== -->
+
+        <div
+            v-if="accountToDelete"
+            class="modal-overlay"
+            @click.self="!deleting && (accountToDelete = null)"
+        >
+            <div class="modal" role="dialog" aria-modal="true">
+                <h2>
+                    Eliminar cuenta
+                </h2>
+
+                <p>
+                    ¿Seguro que deseas eliminar la cuenta
+                    <strong>{{ accountToDelete.name }}</strong>?
+                    Esta acción no se puede deshacer.
+                </p>
+
+                <div class="modal-actions">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        :disabled="deleting"
+                        @click="accountToDelete = null"
+                    >
+                        Cancelar
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn btn-danger"
+                        :disabled="deleting"
+                        @click="confirmDelete"
+                    >
+                        {{ deleting ? 'Eliminando...' : 'Eliminar' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>
 
 
-<style scoped>
-.accounts-page {
-    display: flex;
-    flex-direction: column;
-
-    gap: 24px;
-
-    width: 100%;
-}
-
-
-/* =========================================================
-   HEADER
-   ========================================================= */
-
-.page-header {
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 20px;
-}
-
-.page-title {
-    font-size: 24px;
-    font-weight: 700;
-
-    color: var(--color-text-primary);
-}
-
-.page-description {
-    margin-top: 5px;
-
-    color: var(--color-text-muted);
-
-    font-size: 13px;
-}
-
-
-/* =========================================================
-   BUTTONS
-   ========================================================= */
-
-.btn {
-    min-height: 40px;
-
-    padding: 0 16px;
-
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
-
-    font-size: 13px;
-    font-weight: 600;
-
-    transition:
-        background var(--transition-fast),
-        border-color var(--transition-fast),
-        box-shadow var(--transition-fast);
-}
-
-.btn-primary {
-    background: var(--color-primary);
-    color: white;
-}
-
-.btn-primary:hover {
-    background: var(--color-primary-hover);
-
-    box-shadow: var(--shadow-sm);
-}
-
-
-/* =========================================================
-   SUCCESS
-   ========================================================= */
-
-.alert {
-    padding: 12px 14px;
-
-    border-radius: var(--radius-md);
-
-    font-size: 13px;
-}
-
-.alert-success {
-    background: var(--color-success-light);
-    color: var(--color-success);
-
-    border: 1px solid #bbf7d0;
-}
-
-.alert-error {
-    background: var(--color-danger-light);
-    color: var(--color-danger);
-
-    border: 1px solid #fecaca;
-}
-
-
-/* =========================================================
-   FORM CARD
-   ========================================================= */
-
-.form-card {
-    background: var(--color-surface);
-
-    border: 1px solid var(--color-border);
-
-    border-radius: var(--radius-lg);
-
-    box-shadow: var(--shadow-sm);
-
-    overflow: hidden;
-}
-
-.form-card-header {
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 20px 24px;
-
-    border-bottom: 1px solid var(--color-border-light);
-}
-
-.form-card-header h2 {
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.form-card-header p {
-    margin-top: 4px;
-
-    color: var(--color-text-muted);
-
-    font-size: 12px;
-}
-
-.form-card-body {
-    padding: 24px;
-}
-
-.close-button {
-    width: 32px;
-    height: 32px;
-
-    border: 0;
-    border-radius: var(--radius-md);
-
-    background: transparent;
-
-    color: var(--color-text-muted);
-
-    font-size: 24px;
-    line-height: 1;
-
-    cursor: pointer;
-
-    transition:
-        background var(--transition-fast),
-        color var(--transition-fast);
-}
-
-.close-button:hover {
-    background: var(--color-surface-hover);
-    color: var(--color-text-primary);
-}
-
-
-/* =========================================================
-   EMPTY STATE
-   ========================================================= */
-
-.empty-state {
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    text-align: center;
-
-    min-height: 360px;
-
-    padding: 40px;
-
-    background: var(--color-surface);
-
-    border: 1px dashed var(--color-border-dark);
-
-    border-radius: var(--radius-lg);
-}
-
-.empty-icon {
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    width: 64px;
-    height: 64px;
-
-    margin-bottom: 16px;
-
-    border-radius: 50%;
-
-    background: var(--color-primary-light);
-
-    color: var(--color-primary);
-
-    font-size: 24px;
-    font-weight: 700;
-}
-
-.empty-state h2 {
-    font-size: 17px;
-    font-weight: 600;
-}
-
-.empty-state p {
-    max-width: 400px;
-
-    margin-top: 8px;
-    margin-bottom: 20px;
-
-    color: var(--color-text-muted);
-
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-
-/* =========================================================
-   LOADING
-   ========================================================= */
-
-.state-container {
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    min-height: 250px;
-
-    gap: 12px;
-
-    color: var(--color-text-muted);
-
-    font-size: 13px;
-}
-
-.loading-spinner {
-    width: 28px;
-    height: 28px;
-
-    border: 3px solid #e5e7eb;
-    border-top-color: var(--color-primary);
-
-    border-radius: 50%;
-
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-
-/* =========================================================
-   ACCOUNTS GRID
-   ========================================================= */
-
-.accounts-grid {
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            auto-fill,
-            minmax(280px, 1fr)
-        );
-
-    gap: 16px;
-}
-
-
-/* =========================================================
-   ACCOUNT CARD
-   ========================================================= */
-
-.account-card {
-    display: flex;
-
-    flex-direction: column;
-
-    min-height: 190px;
-
-    background: var(--color-surface);
-
-    border: 1px solid var(--color-border);
-
-    border-radius: var(--radius-lg);
-
-    box-shadow: var(--shadow-sm);
-
-    overflow: hidden;
-
-    transition:
-        box-shadow var(--transition-normal),
-        transform var(--transition-normal);
-}
-
-.account-card:hover {
-    box-shadow: var(--shadow-md);
-
-    transform: translateY(-1px);
-}
-
-.account-card-header {
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    padding: 18px;
-
-    border-bottom: 1px solid var(--color-border-light);
-}
-
-.account-icon {
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    width: 42px;
-    height: 42px;
-
-    flex-shrink: 0;
-
-    border-radius: var(--radius-md);
-
-    background: var(--color-primary-light);
-
-    color: var(--color-primary);
-
-    font-size: 17px;
-    font-weight: 700;
-}
-
-.account-card-header h3 {
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.account-card-header span {
-    display: block;
-
-    margin-top: 3px;
-
-    color: var(--color-text-muted);
-
-    font-size: 11px;
-}
-
-.account-card-body {
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 5px;
-
-    padding: 18px;
-}
-
-.balance-label {
-    color: var(--color-text-muted);
-
-    font-size: 11px;
-}
-
-.balance {
-    color: var(--color-text-primary);
-
-    font-size: 22px;
-    font-weight: 700;
-
-    letter-spacing: -0.5px;
-}
-
-.account-card-footer {
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 10px;
-
-    margin-top: auto;
-
-    padding: 12px 18px;
-
-    border-top: 1px solid var(--color-border-light);
-}
-
-.account-status {
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.status-dot {
-    width: 7px;
-    height: 7px;
-
-    border-radius: 50%;
-}
-
-.account-status.active {
-    color: var(--color-success);
-}
-
-.account-status.active .status-dot {
-    background: var(--color-success);
-}
-
-.account-status.inactive {
-    color: var(--color-text-muted);
-}
-
-.account-status.inactive .status-dot {
-    background: var(--color-text-light);
-}
-
-.institution {
-    max-width: 150px;
-
-    overflow: hidden;
-
-    color: var(--color-text-muted);
-
-    font-size: 11px;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
-}
-
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-
-@media (max-width: 640px) {
-    .page-header {
-        align-items: flex-start;
-
-        flex-direction: column;
-    }
-
-    .page-header .btn {
-        width: 100%;
-    }
-
-    .form-card-body {
-        padding: 18px;
-    }
-
-    .accounts-grid {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
+<style scoped src="../styles/accounts-view.css"></style>

@@ -66,12 +66,37 @@ export const useAccountStore = defineStore(
             }
         }
 
+        async function updateAccount(id, data) {
+            const response =
+                await accountService.update(id, data)
+
+            const index = accounts.value.findIndex(
+                (account) => account.id === id
+            )
+
+            if (index !== -1) {
+                accounts.value[index] = response.data
+            }
+
+            return response.data
+        }
+
+        async function deleteAccount(id) {
+            await accountService.delete(id)
+
+            accounts.value = accounts.value.filter(
+                (account) => account.id !== id
+            )
+        }
+
         return {
             accounts,
             loading,
             error,
             fetchAccounts,
             createAccount,
+            updateAccount,
+            deleteAccount,
         }
     }
 )
