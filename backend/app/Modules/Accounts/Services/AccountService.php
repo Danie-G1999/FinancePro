@@ -4,6 +4,8 @@ namespace App\Modules\Accounts\Services;
 
 use App\Modules\Accounts\Interfaces\AccountRepositoryInterface;
 use App\Shared\Services\BaseService;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class AccountService extends BaseService
 {
@@ -13,54 +15,17 @@ class AccountService extends BaseService
         parent::__construct($repository);
     }
 
-    public function getUserAccounts(int $userId)
+    public function getUserAccounts(int $userId): Collection
     {
-        return $this->repository->allByUser($userId);
+        return $this->repository->getByUser($userId);
     }
 
-    public function getUserAccount(
-        int $userId,
-        int|string $accountId
-    ) {
-        return $this->repository->findByUserOrFail(
-            $userId,
-            $accountId
-        );
-    }
-
-    public function createUserAccount(
+    public function createForUser(
         int $userId,
         array $data
-    ) {
+    ): Model {
         $data['user_id'] = $userId;
 
         return $this->repository->create($data);
-    }
-
-    public function updateUserAccount(
-        int $userId,
-        int|string $accountId,
-        array $data
-    ) {
-        $account = $this->repository->findByUserOrFail(
-            $userId,
-            $accountId
-        );
-
-        $account->update($data);
-
-        return $account->refresh();
-    }
-
-    public function deleteUserAccount(
-        int $userId,
-        int|string $accountId
-    ): bool {
-        $account = $this->repository->findByUserOrFail(
-            $userId,
-            $accountId
-        );
-
-        return (bool) $account->delete();
     }
 }

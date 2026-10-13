@@ -14,32 +14,12 @@ class AccountRepository extends BaseRepository implements AccountRepositoryInter
         parent::__construct($model);
     }
 
-    public function allByUser(int $userId): Collection
+    public function getByUser(int $userId): Collection
     {
         return $this->model
             ->newQuery()
             ->where('user_id', $userId)
-            ->latest()
+            ->orderBy('name')
             ->get();
-    }
-
-    public function findByUser(
-        int $userId,
-        int|string $accountId
-    ): ?Account {
-        return $this->model
-            ->newQuery()
-            ->where('user_id', $userId)
-            ->find($accountId);
-    }
-
-    public function findByUserOrFail(
-        int $userId,
-        int|string $accountId
-    ): Account {
-        return $this->model
-            ->newQuery()
-            ->where('user_id', $userId)
-            ->findOrFail($accountId);
     }
 }

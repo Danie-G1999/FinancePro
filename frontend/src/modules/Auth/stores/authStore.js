@@ -1,71 +1,78 @@
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import authService from '../services/authService'
 
-export const useAuthStore = defineStore('auth', {
-    state: () => ({
-        user: null,
-        loading: false,
-        initialized: false,
-    }),
+import api from '../../../api/axios'
+import sanctum from '../../../api/sanctum'
 
-    getters: {
-        isAuthenticated: (state) => !!state.user,
-    },
+export const useAuthStore = defineStore(
+    'auth',
+    () => {
+        const user = ref(null)
+        const loading = ref(false)
+        const initialized = ref(false)
 
-    actions: {
-        async login(credentials) {
-            this.loading = true
+        const isAuthenticated = computed(() => {
+            return user.value !== null
+        })
+
+        async function login(credentials) {
+            loading.value = true
 
             try {
-                const user = await authService.login(credentials)
+                // Obtener cookie CSRF
+                await sanctum.get('/sanctum/csrf-cookie')
 
-                this.user = user.data
+                // Iniciar sesión
+                const response = await api.post(
+                    '/auth/login',
+                    credentials
+                )
 
-                return this.user
+                user.value = response.data.data
+
+                return response
             } finally {
-                this.loading = false
+                loading.value = false
             }
-        },
+        }
 
-        async register(data) {
-            this.loading = true
-
+        async function logout() {
             try {
-                const user = await authService.register(data)
-
-                this.user = user.data
-
-                return this.user
+                await api.post('/auth/logout')
             } finally {
-                this.loading = false
+                user.value = null
+                initialized.value = true
             }
-        },
+        }
 
-        async fetchUser() {
+        async function fetchUser() {
             try {
-                const response = await authService.me()
+                const response = await api.get('/auth/me')
 
-                this.user = response.data
+                user.value = response.data.data
 
-                return this.user
+                return user.value
             } catch (error) {
-                this.user = null
+                if (error.response?.status === 401) {
+                    user.value = null
 
-                return null
+                    return null
+                }
+
+                throw error
             } finally {
-                this.initialized = true
+                initialized.value = true
             }
-        },
+        }
 
-        async logout() {
-            this.loading = true
-
-            try {
-                await authService.logout()
-            } finally {
-                this.user = null
-                this.loading = false
-            }
-        },
-    },
-})
+        return {
+            user,
+            loading,
+            initialized,
+            isAuthenticated,
+            login,
+            logout,
+            fetchUser,
+        }
+    }
+)

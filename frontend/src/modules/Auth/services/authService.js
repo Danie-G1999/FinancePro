@@ -1,47 +1,46 @@
+import axios from 'axios'
 import api from '../../../api/axios'
 
-const authService = {
-    async csrf() {
-        await api.get('/sanctum/csrf-cookie')
+const csrf = axios.create({
+    baseURL: 'http://localhost:8001',
+
+    withCredentials: true,
+
+    withXSRFToken: true,
+
+    headers: {
+        Accept: 'application/json',
+    },
+})
+
+export const authService = {
+    async getCsrfCookie() {
+        return await csrf.get('/sanctum/csrf-cookie')
     },
 
     async login(credentials) {
-        await this.csrf()
+        await this.getCsrfCookie()
 
-        const response = await api.post(
-            '/api/auth/login',
+        return await api.post(
+            '/auth/login',
             credentials
         )
-
-        return response.data
-    },
-
-    async register(data) {
-        await this.csrf()
-
-        const response = await api.post(
-            '/api/auth/register',
-            data
-        )
-
-        return response.data
-    },
-
-    async me() {
-        const response = await api.get('/api/auth/me')
-
-        return response.data
     },
 
     async logout() {
-        await this.csrf()
+        return await api.post('/auth/logout')
+    },
 
-        const response = await api.post(
-            '/api/auth/logout'
+    async me() {
+        return await api.get('/auth/me')
+    },
+
+    async register(data) {
+        await this.getCsrfCookie()
+
+        return await api.post(
+            '/auth/register',
+            data
         )
-
-        return response.data
     },
 }
-
-export default authService
