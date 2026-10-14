@@ -4,8 +4,11 @@ namespace App\Modules\Expenses\Services;
 
 use App\Modules\Accounts\Enums\AccountType;
 use App\Modules\Accounts\Interfaces\AccountRepositoryInterface;
+use App\Modules\Budgets\Enums\BudgetType;
+use App\Modules\Budgets\Enums\CostType;
 use App\Modules\Debts\Interfaces\DebtRepositoryInterface;
 use App\Modules\Expenses\Interfaces\ExpenseRepositoryInterface;
+use App\Modules\Goals\Interfaces\GoalRepositoryInterface;
 use App\Shared\Services\BaseService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -19,7 +22,8 @@ class ExpenseService extends BaseService
     public function __construct(
         ExpenseRepositoryInterface $repository,
         private AccountRepositoryInterface $accounts,
-        private DebtRepositoryInterface $debts
+        private DebtRepositoryInterface $debts,
+        private GoalRepositoryInterface $goals
     ) {
         parent::__construct($repository);
     }
@@ -32,7 +36,7 @@ class ExpenseService extends BaseService
     public function createForUser(int $userId, array $data): Model
     {
         return DB::transaction(function () use ($userId, $data) {
-            $data['debt_id'] ??= null;
+            $data = $this->classify($data);
 
             $this->validateMovement($userId, $data);
 
@@ -52,7 +56,7 @@ class ExpenseService extends BaseService
         return DB::transaction(function () use ($userId, $id, $data) {
             $expense = $this->findForUser($userId, $id);
 
-            $data['debt_id'] ??= null;
+            $data = $this->classify($data);
 
             $this->validateMovement($userId, $data, $expense);
 
@@ -82,6 +86,27 @@ class ExpenseService extends BaseService
         if ($data['debt_id']) {
             $this->ensureValidDebtPayment($userId, $account, $data, $current);
         }
+
+        if ($data['goal_id']) {
+            $this->ensureValidGoalContribution($userId, $account, $data, $current);
+        }
+    }
+
+    /** Pagos de deuda y aportes a metas van al bloque de ahorro y deudas; el resto lo elige el usuario. */
+    private function classify(array $data): array
+    {
+        $data['debt_id'] ??= null;
+        $data['goal_id'] ??= null;
+
+        if ($data['debt_id']) {
+            $data['budget_type'] = BudgetType::SAVINGS->value;
+            $data['cost_type'] = CostType::FIXED->value;
+        } elseif ($data['goal_id']) {
+            $data['budget_type'] = BudgetType::SAVINGS->value;
+            $data['cost_type'] = null;
+        }
+
+        return $data;
     }
 
     /** Las tarjetas de crédito pueden gastar por encima de su saldo. */
@@ -141,4 +166,37 @@ class ExpenseService extends BaseService
             ]);
         }
     }
-}
+
+    private function ensureValidGoalContribution(
+        int $userId,
+        Model $account,
+        array $data,
+        ?Model $current
+    ): void {
+        $goal = $this->goals->findByUserOrFail($userId, (int) $data['goal_id']);
+
+        if ($goal->currency !== $account->currency) {
+            throw ValidationException::withMessages([
+                'account_id' => "La cuenta debe estar en {$goal->currency}, la moneda de la meta.",
+            ]);
+        }
+
+        $remaining = $goal->remainingAmount();
+
+        // Al editar, el aporte actual ya está sumado a la meta.
+        if ($current && $current->goal_id === $goal->getKey()) {
+            $remaining += (float) $current->amount;
+        }
+
+        if ($remaining <= 0) {
+            throw ValidationException::withMessages([
+                'goal_id' => 'Esta meta ya alcanzó su valor objetivo.',
+            ]);
+        }
+
+        if ((float) $data['amount'] > $remaining) {
+            throw ValidationException::withMessages([
+                'amount' => 'El valor supera lo que falta para completar la meta.',
+            ]);
+        }
+    }}

@@ -23,6 +23,11 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+
+    goals: {
+        type: Array,
+        default: () => [],
+    },
 })
 
 const emit = defineEmits(['submit', 'cancel'])
@@ -46,6 +51,12 @@ const form = reactive({
     notes: props.expense?.notes ?? '',
     pays_debt: Boolean(props.expense?.debt_id),
     debt_id: props.expense?.debt_id ?? '',
+    pays_goal: Boolean(props.expense?.goal_id),
+    goal_id: props.expense?.goal_id ?? '',
+    budget_type: ['need', 'want'].includes(props.expense?.budget_type)
+        ? props.expense.budget_type
+        : 'need',
+    cost_type: props.expense?.cost_type ?? 'variable',
 })
 
 const display = reactive({
@@ -120,14 +131,75 @@ function setAmount(value) {
     display.amount = numberToMoneyInput(form.amount)
 }
 
+const payableGoals = computed(() =>
+    props.goals.filter(
+        (goal) =>
+            Number(goal.remaining_amount) > 0 ||
+            goal.id === props.expense?.goal_id
+    )
+)
+
+const selectedGoal = computed(() =>
+    form.pays_goal
+        ? props.goals.find((goal) => goal.id === Number(form.goal_id))
+        : null
+)
+
+// Al editar, el aporte actual ya está sumado al ahorro de la meta.
+const goalRemaining = computed(() => {
+    if (!selectedGoal.value) {
+        return 0
+    }
+
+    const restored =
+        props.expense?.goal_id === selectedGoal.value.id
+            ? Number(props.expense.amount)
+            : 0
+
+    return Number(selectedGoal.value.remaining_amount) + restored
+})
+
+const goalCurrencyMismatch = computed(
+    () =>
+        selectedGoal.value &&
+        selectedAccount.value &&
+        selectedGoal.value.currency !== selectedAccount.value.currency
+)
+
+// Pagos de deuda y aportes a metas se clasifican solos en el backend.
+const isClassifiable = computed(() => !form.pays_debt && !form.pays_goal)
+
 watch(
     () => form.pays_debt,
     (value) => {
         if (!value) {
             form.debt_id = ''
+        } else {
+            form.pays_goal = false
         }
     }
 )
+
+watch(
+    () => form.pays_goal,
+    (value) => {
+        if (!value) {
+            form.goal_id = ''
+        } else {
+            form.pays_debt = false
+        }
+    }
+)
+
+watch(selectedGoal, (goal) => {
+    if (!goal || props.expense) {
+        return
+    }
+
+    if (!form.description.trim()) {
+        form.description = `Aporte a meta: ${goal.name}`
+    }
+})
 
 watch(selectedDebt, (debt) => {
     if (!debt || props.expense) {
@@ -170,6 +242,19 @@ function validate() {
     ) {
         errors.value.amount =
             'El valor supera el saldo pendiente de la deuda.'
+    } else if (
+        selectedGoal.value &&
+        Number(form.amount) > goalRemaining.value
+    ) {
+        errors.value.amount =
+            'El valor supera lo que falta para completar la meta.'
+    }
+
+    if (form.pays_goal && !form.goal_id) {
+        errors.value.goal_id = 'Selecciona la meta a la que vas a aportar.'
+    } else if (goalCurrencyMismatch.value) {
+        errors.value.account_id =
+            'La cuenta debe tener la misma moneda de la meta.'
     }
 
     if (form.pays_debt && !form.debt_id) {
@@ -200,6 +285,9 @@ async function handleSubmit() {
             amount: Number(form.amount),
             spent_at: form.spent_at,
             debt_id: form.pays_debt ? Number(form.debt_id) : null,
+            goal_id: form.pays_goal ? Number(form.goal_id) : null,
+            budget_type: isClassifiable.value ? form.budget_type : null,
+            cost_type: isClassifiable.value ? form.cost_type : null,
             notes: form.notes.trim() || null,
         })
     } finally {
@@ -448,6 +536,158 @@ function handleCancel() {
                 {{ errors.description }}
             </span>
         </div>
+
+        <div class="form-group">
+            <span class="form-label">
+                ¿Es un aporte a una meta de ahorro?
+            </span>
+
+            <div class="segmented" role="group">
+                <button
+                    type="button"
+                    class="segmented-option"
+                    :class="{ active: !form.pays_goal }"
+                    :disabled="loading"
+                    @click="form.pays_goal = false"
+                >
+                    No
+                </button>
+
+                <button
+                    type="button"
+                    class="segmented-option"
+                    :class="{ active: form.pays_goal }"
+                    :disabled="loading || payableGoals.length === 0"
+                    @click="form.pays_goal = true"
+                >
+                    Sí
+                </button>
+            </div>
+
+            <span
+                v-if="payableGoals.length === 0"
+                class="form-help"
+            >
+                No tienes metas con valor pendiente. Créalas en Presupuestos.
+            </span>
+        </div>
+
+        <div v-if="form.pays_goal" class="form-group">
+            <label for="expense-goal" class="form-label">
+                Meta de ahorro
+                <span class="required">*</span>
+            </label>
+
+            <select
+                id="expense-goal"
+                v-model="form.goal_id"
+                class="form-input"
+                :class="{ 'input-error': errors.goal_id }"
+                :disabled="loading"
+            >
+                <option value="" disabled>
+                    Selecciona una meta
+                </option>
+
+                <option
+                    v-for="goal in payableGoals"
+                    :key="goal.id"
+                    :value="goal.id"
+                >
+                    {{ goal.name }} ({{ goal.currency }})
+                </option>
+            </select>
+
+            <span v-if="errors.goal_id" class="form-error">
+                {{ errors.goal_id }}
+            </span>
+        </div>
+
+        <div
+            v-if="selectedGoal"
+            class="form-group debt-info-wrapper"
+        >
+            <div class="debt-info-card">
+                <div class="debt-info-row">
+                    <span>Valor objetivo</span>
+                    <strong>
+                        {{ formatMoney(selectedGoal.target_amount, selectedGoal.currency) }}
+                    </strong>
+                </div>
+
+                <div class="debt-info-row">
+                    <span>Ahorrado</span>
+                    <strong>
+                        {{ formatMoney(selectedGoal.saved_amount, selectedGoal.currency) }}
+                    </strong>
+                </div>
+
+                <div class="debt-info-row">
+                    <span>Falta para la meta</span>
+                    <strong class="debt-info-pending">
+                        {{ formatMoney(goalRemaining, selectedGoal.currency) }}
+                    </strong>
+                </div>
+
+                <div class="debt-info-row">
+                    <span>Progreso</span>
+                    <strong>{{ selectedGoal.progress_percent }}%</strong>
+                </div>
+            </div>
+
+            <span v-if="goalCurrencyMismatch" class="form-error">
+                La cuenta seleccionada está en {{ selectedAccount.currency }}
+                y la meta en {{ selectedGoal.currency }}.
+            </span>
+        </div>
+
+        <template v-if="isClassifiable">
+            <div class="form-group">
+                <label for="expense-budget-type" class="form-label">
+                    Categoría del presupuesto
+                    <span class="required">*</span>
+                </label>
+
+                <select
+                    id="expense-budget-type"
+                    v-model="form.budget_type"
+                    class="form-input"
+                    :disabled="loading"
+                >
+                    <option value="need">Necesidad (50%)</option>
+                    <option value="want">Deseo (30%)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <span class="form-label">
+                    Tipo de gasto
+                    <span class="required">*</span>
+                </span>
+
+                <div class="segmented" role="group">
+                    <button
+                        type="button"
+                        class="segmented-option"
+                        :class="{ active: form.cost_type === 'fixed' }"
+                        :disabled="loading"
+                        @click="form.cost_type = 'fixed'"
+                    >
+                        Fijo
+                    </button>
+
+                    <button
+                        type="button"
+                        class="segmented-option"
+                        :class="{ active: form.cost_type === 'variable' }"
+                        :disabled="loading"
+                        @click="form.cost_type = 'variable'"
+                    >
+                        Variable
+                    </button>
+                </div>
+            </div>
+        </template>
 
         <div class="form-group form-group-full">
             <label for="expense-notes" class="form-label">

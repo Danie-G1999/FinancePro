@@ -47,3 +47,23 @@ export function showError(text, title = 'Ocurrió un error') {
         confirmButtonColor: PRIMARY_COLOR,
     })
 }
+
+export async function confirmAction({
+    title,
+    text,
+    confirmText = 'Confirmar',
+    danger = false,
+}) {
+    const result = await Swal.fire({
+        icon: 'warning',
+        title,
+        text,
+        showCancelButton: true,
+        confirmButtonText: confirmText,
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: danger ? '#dc2626' : PRIMARY_COLOR,
+        reverseButtons: true,
+    })
+
+    return result.isConfirmed
+}

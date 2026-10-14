@@ -40,7 +40,7 @@ class DebtRepository extends BaseRepository implements DebtRepositoryInterface
     public function getPayments(int $debtId): Collection
     {
         return Expense::query()
-            ->with(['account:id,name,currency', 'debt:id,name'])
+            ->with(['account:id,name,currency', 'debt:id,name', 'goal:id,name'])
             ->where('debt_id', $debtId)
             ->orderByDesc('spent_at')
             ->orderByDesc('id')

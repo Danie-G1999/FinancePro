@@ -7,6 +7,7 @@ import TransactionTable from '../../../components/common/TransactionTable.vue'
 import { useExpenseStore } from '../stores/expenseStore'
 import { useAccountStore } from '../../Accounts/stores/accountStore'
 import { useDebtStore } from '../../Debts/stores/debtStore'
+import { useGoalStore } from '../../Goals/stores/goalStore'
 import {
     extractErrorMessage,
     showError,
@@ -21,6 +22,8 @@ const expenseStore = useExpenseStore()
 const accountStore = useAccountStore()
 
 const debtStore = useDebtStore()
+
+const goalStore = useGoalStore()
 
 const showForm = ref(false)
 
@@ -58,6 +61,14 @@ function goToAccounts() {
     router.push({ name: 'cuentas' })
 }
 
+async function refreshBalances() {
+    await Promise.all([
+        accountStore.fetchAccounts(),
+        debtStore.fetchDebts(),
+        goalStore.fetchGoals(),
+    ])
+}
+
 async function saveExpense(isEditing, data) {
     if (isEditing) {
         await expenseStore.updateExpense(editingExpense.value.id, data)
@@ -66,10 +77,7 @@ async function saveExpense(isEditing, data) {
     }
 
     // El saldo disponible de las cuentas cambia con cada gasto.
-    await Promise.all([
-        accountStore.fetchAccounts(),
-        debtStore.fetchDebts(),
-    ])
+    await refreshBalances()
 }
 
 async function handleSaveExpense(data) {
@@ -119,10 +127,7 @@ async function confirmDelete() {
     try {
         await withLoading('Eliminando gasto...', async () => {
             await expenseStore.deleteExpense(expenseToDelete.value.id)
-            await Promise.all([
-                accountStore.fetchAccounts(),
-                debtStore.fetchDebts(),
-            ])
+            await refreshBalances()
         })
 
         expenseToDelete.value = null
@@ -145,6 +150,7 @@ async function confirmDelete() {
 onMounted(() => {
     expenseStore.fetchExpenses()
     debtStore.fetchDebts()
+    goalStore.fetchGoals()
 
     accountStore.fetchAccounts().catch(() => {
         showError('No fue posible cargar las cuentas.')
@@ -221,6 +227,7 @@ onMounted(() => {
                     :expense="editingExpense"
                     :accounts="activeAccounts"
                     :debts="debtStore.debts"
+                    :goals="goalStore.goals"
                     @submit="handleSaveExpense"
                     @cancel="handleCancel"
                 />

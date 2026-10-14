@@ -9,6 +9,9 @@ use App\Modules\Expenses\ExpensesServiceProvider;
 use App\Modules\Dashboard\DashboardServiceProvider;
 use App\Modules\Transactions\TransactionsServiceProvider;
 use App\Modules\Profile\ProfileServiceProvider;
+use App\Modules\Goals\GoalsServiceProvider;
+use App\Modules\Budgets\BudgetsServiceProvider;
+use App\Modules\Reports\ReportsServiceProvider;
 use App\Modules\Auth\Providers\AuthServiceProvider;
 
 return [
@@ -29,6 +32,12 @@ return [
     TransactionsServiceProvider::class,
 
     ProfileServiceProvider::class,
+
+    GoalsServiceProvider::class,
+
+    BudgetsServiceProvider::class,
+
+    ReportsServiceProvider::class,
 
     AuthServiceProvider::class,
 ];

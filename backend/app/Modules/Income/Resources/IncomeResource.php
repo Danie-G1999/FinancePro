@@ -16,6 +16,12 @@ class IncomeResource extends JsonResource
 
             'account_name' => $this->account?->name,
 
+            'recurring_income_id' => $this->recurring_income_id,
+
+            'recurring_label' => $this->recurringIncome
+                ? $this->recurringIncome->type->label() . ' automático'
+                : null,
+
             'description' => $this->description,
 
             'amount' => $this->amount,

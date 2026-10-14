@@ -114,6 +114,20 @@ function formatDate(value) {
                             </span>
 
                             <span
+                                v-if="item.goal_name"
+                                class="cell-debt"
+                            >
+                                Aporte a meta: {{ item.goal_name }}
+                            </span>
+
+                            <span
+                                v-if="item.recurring_label"
+                                class="cell-debt"
+                            >
+                                {{ item.recurring_label }}
+                            </span>
+
+                            <span
                                 v-if="item.notes"
                                 class="cell-notes"
                             >

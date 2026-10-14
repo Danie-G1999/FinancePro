@@ -3,10 +3,13 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import IncomeForm from '../components/IncomeForm.vue'
+import RecurringIncomesModal from '../components/RecurringIncomesModal.vue'
 import TransactionTable from '../../../components/common/TransactionTable.vue'
 import { useIncomeStore } from '../stores/incomeStore'
+import { useRecurringIncomeStore } from '../stores/recurringIncomeStore'
 import { useAccountStore } from '../../Accounts/stores/accountStore'
 import {
+    confirmAction,
     extractErrorMessage,
     showError,
     showSuccess,
@@ -17,11 +20,17 @@ const router = useRouter()
 
 const incomeStore = useIncomeStore()
 
+const recurringStore = useRecurringIncomeStore()
+
 const accountStore = useAccountStore()
 
 const showForm = ref(false)
 
 const editingIncome = ref(null)
+
+const editingSchedule = ref(null)
+
+const showSchedules = ref(false)
 
 const incomeToDelete = ref(null)
 
@@ -41,11 +50,20 @@ function openCreate() {
     }
 
     editingIncome.value = null
+    editingSchedule.value = null
     showForm.value = true
 }
 
 function openEdit(income) {
     editingIncome.value = income
+    editingSchedule.value = null
+    showForm.value = true
+}
+
+function openEditSchedule(schedule) {
+    showSchedules.value = false
+    editingIncome.value = null
+    editingSchedule.value = schedule
     showForm.value = true
 }
 
@@ -56,24 +74,25 @@ function goToAccounts() {
 }
 
 async function handleSaveIncome(data) {
-    const isEditing = editingIncome.value !== null
+    const isRecurring = data.is_recurring
+    const isEditing = isRecurring
+        ? editingSchedule.value !== null
+        : editingIncome.value !== null
 
     try {
         await withLoading(
             isEditing ? 'Guardando cambios...' : 'Registrando ingreso...',
-            () =>
-                isEditing
-                    ? incomeStore.updateIncome(editingIncome.value.id, data)
-                    : incomeStore.createIncome(data)
+            () => saveIncome(data, isRecurring, isEditing)
         )
 
-        showForm.value = false
-        editingIncome.value = null
+        handleCancel()
 
         showSuccess(
-            isEditing
-                ? 'Ingreso actualizado correctamente.'
-                : 'Ingreso registrado correctamente.'
+            isRecurring
+                ? 'Ingreso recurrente guardado correctamente.'
+                : isEditing
+                  ? 'Ingreso actualizado correctamente.'
+                  : 'Ingreso registrado correctamente.'
         )
     } catch (error) {
         showError(
@@ -85,6 +104,64 @@ async function handleSaveIncome(data) {
     }
 }
 
+async function saveIncome(data, isRecurring, isEditing) {
+    const { is_recurring: _flag, ...payload } = data
+
+    if (!isRecurring) {
+        await (isEditing
+            ? incomeStore.updateIncome(editingIncome.value.id, payload)
+            : incomeStore.createIncome(payload))
+
+        return
+    }
+
+    await (isEditing
+        ? recurringStore.updateSchedule(editingSchedule.value.id, payload)
+        : recurringStore.createSchedule(payload))
+
+    // Al guardar puede registrarse de inmediato el ingreso de meses ya vencidos.
+    await Promise.all([incomeStore.fetchIncomes(1), accountStore.fetchAccounts()])
+}
+
+async function toggleSchedule(schedule) {
+    try {
+        await withLoading('Actualizando...', async () => {
+            await recurringStore.setActive(schedule.id, !schedule.is_active)
+            await Promise.all([incomeStore.fetchIncomes(1), accountStore.fetchAccounts()])
+        })
+    } catch (error) {
+        showError(
+            extractErrorMessage(error, 'No fue posible actualizar el ingreso recurrente.')
+        )
+    }
+}
+
+async function deleteSchedule(schedule) {
+    const confirmed = await confirmAction({
+        title: 'Eliminar ingreso recurrente',
+        text: `Se dejará de registrar «${schedule.description}» cada mes. Los ingresos ya registrados se conservan.`,
+        confirmText: 'Eliminar',
+        danger: true,
+    })
+
+    if (!confirmed) {
+        return
+    }
+
+    try {
+        await withLoading('Eliminando...', async () => {
+            await recurringStore.deleteSchedule(schedule.id)
+            await incomeStore.fetchIncomes()
+        })
+
+        showSuccess('Ingreso recurrente eliminado correctamente.')
+    } catch (error) {
+        showError(
+            extractErrorMessage(error, 'No fue posible eliminar el ingreso recurrente.')
+        )
+    }
+}
+
 function goToPage(page) {
     incomeStore.fetchIncomes(page)
 }
@@ -92,6 +169,7 @@ function goToPage(page) {
 function handleCancel() {
     showForm.value = false
     editingIncome.value = null
+    editingSchedule.value = null
 }
 
 function askDelete(income) {
@@ -125,6 +203,7 @@ async function confirmDelete() {
 
 onMounted(() => {
     incomeStore.fetchIncomes()
+    recurringStore.fetchSchedules()
 
     accountStore.fetchAccounts().catch(() => {
         showError('No fue posible cargar las cuentas.')
@@ -149,14 +228,26 @@ onMounted(() => {
                 </p>
             </div>
 
-            <button
+            <div
                 v-if="!showForm"
-                type="button"
-                class="btn btn-primary"
-                @click="openCreate"
+                class="header-actions"
             >
-                + Nuevo ingreso
-            </button>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    @click="showSchedules = true"
+                >
+                    Recurrentes ({{ recurringStore.schedules.length }})
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    @click="openCreate"
+                >
+                    + Nuevo ingreso
+                </button>
+            </div>
 
         </header>
 
@@ -172,12 +263,18 @@ onMounted(() => {
 
                 <div>
                     <h2>
-                        {{ editingIncome ? 'Editar ingreso' : 'Nuevo ingreso' }}
+                        {{
+                            editingSchedule
+                                ? 'Editar ingreso recurrente'
+                                : editingIncome
+                                  ? 'Editar ingreso'
+                                  : 'Nuevo ingreso'
+                        }}
                     </h2>
 
                     <p>
                         {{
-                            editingIncome
+                            editingSchedule || editingIncome
                                 ? 'Modifica los datos del ingreso.'
                                 : 'Registra un nuevo ingreso.'
                         }}
@@ -197,8 +294,9 @@ onMounted(() => {
             <div class="form-card-body">
 
                 <IncomeForm
-                    :key="editingIncome?.id ?? 'new'"
+                    :key="editingSchedule ? `s-${editingSchedule.id}` : (editingIncome?.id ?? 'new')"
                     :income="editingIncome"
+                    :schedule="editingSchedule"
                     :accounts="activeAccounts"
                     @submit="handleSaveIncome"
                     @cancel="handleCancel"
@@ -281,6 +379,18 @@ onMounted(() => {
             @edit="openEdit"
             @delete="askDelete"
             @page-change="goToPage"
+        />
+
+        <!-- RECURRING INCOMES -->
+
+        <RecurringIncomesModal
+            v-if="showSchedules"
+            :schedules="recurringStore.schedules"
+            :loading="recurringStore.loading"
+            @close="showSchedules = false"
+            @edit="openEditSchedule"
+            @toggle="toggleSchedule"
+            @delete="deleteSchedule"
         />
 
         <!-- NO ACCOUNTS MODAL -->

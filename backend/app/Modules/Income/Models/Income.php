@@ -14,6 +14,7 @@ class Income extends Model
     protected $fillable = [
         'user_id',
         'account_id',
+        'recurring_income_id',
         'description',
         'amount',
         'received_at',
@@ -36,5 +37,10 @@ class Income extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+    public function recurringIncome(): BelongsTo
+    {
+        return $this->belongsTo(RecurringIncome::class);
     }
 }

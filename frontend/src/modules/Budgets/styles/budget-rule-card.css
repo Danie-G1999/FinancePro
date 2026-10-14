@@ -1,0 +1,132 @@
+.rule-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    min-width: 0;
+
+    padding: 20px;
+
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.rule-card header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.rule-card h3 {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.rule-card header span {
+    display: block;
+
+    margin-top: 4px;
+
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.rule-card header .percent-badge {
+    flex-shrink: 0;
+
+    margin-top: 0;
+    padding: 4px 10px;
+
+    border-radius: 999px;
+
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rule-amounts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.rule-amounts div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    min-width: 0;
+}
+
+.rule-amounts span {
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+}
+
+.rule-amounts strong {
+    overflow: hidden;
+
+    font-size: 14px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rule-amounts .over {
+    color: var(--color-danger);
+}
+
+.progress {
+    height: 8px;
+
+    border-radius: 999px;
+
+    background: #e5e7eb;
+
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+
+    border-radius: 999px;
+
+    transition: width var(--transition-normal);
+}
+
+.progress-bar.ok {
+    background: var(--color-success);
+}
+
+.progress-bar.warning {
+    background: var(--color-warning);
+}
+
+.progress-bar.exceeded {
+    background: var(--color-danger);
+}
+
+.rule-card footer {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+footer.ok {
+    color: var(--color-success);
+}
+
+footer.warning {
+    color: var(--color-warning);
+}
+
+footer.exceeded {
+    color: var(--color-danger);
+}

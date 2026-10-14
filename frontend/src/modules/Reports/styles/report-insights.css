@@ -1,0 +1,61 @@
+.insights {
+    margin: 0;
+    padding: 8px 20px 12px;
+
+    list-style: none;
+}
+
+.insight {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    padding: 11px 0;
+
+    border-bottom: 1px solid var(--color-border-light);
+
+    color: var(--color-text-primary);
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.insight:last-child {
+    border-bottom: 0;
+}
+
+.insight-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.positive .insight-icon {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+.warning .insight-icon {
+    background: #fffbeb;
+    color: var(--color-warning);
+}
+
+.danger .insight-icon {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+.info .insight-icon {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}

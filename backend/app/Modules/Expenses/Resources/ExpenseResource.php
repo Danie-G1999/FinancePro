@@ -20,6 +20,18 @@ class ExpenseResource extends JsonResource
 
             'debt_name' => $this->debt?->name,
 
+            'goal_id' => $this->goal_id,
+
+            'goal_name' => $this->goal?->name,
+
+            'budget_type' => $this->budget_type?->value,
+
+            'budget_type_label' => $this->budget_type?->label(),
+
+            'cost_type' => $this->cost_type?->value,
+
+            'cost_type_label' => $this->cost_type?->label(),
+
             'description' => $this->description,
 
             'amount' => $this->amount,

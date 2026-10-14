@@ -1,0 +1,71 @@
+.accounts {
+    margin: 0;
+    padding: 4px 20px 8px;
+
+    list-style: none;
+}
+
+.account {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    padding: 14px 0;
+
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.account:last-child {
+    border-bottom: 0;
+}
+
+.account-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.account-main div strong {
+    display: block;
+
+    font-size: 13px;
+}
+
+.account-main div span {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+}
+
+.account-balance {
+    flex-shrink: 0;
+
+    font-size: 15px;
+}
+
+.account-balance.negative {
+    color: var(--color-danger);
+}
+
+.account-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+}
+
+.account-flow .in {
+    color: var(--color-success);
+}
+
+.account-flow .out {
+    color: var(--color-danger);
+}
