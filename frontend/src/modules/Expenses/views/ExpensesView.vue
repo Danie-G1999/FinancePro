@@ -8,6 +8,7 @@ import { useExpenseStore } from '../stores/expenseStore'
 import { useAccountStore } from '../../Accounts/stores/accountStore'
 import { useDebtStore } from '../../Debts/stores/debtStore'
 import { useGoalStore } from '../../Goals/stores/goalStore'
+import { useExpenseCategoryStore } from '../../ExpenseCategories/stores/expenseCategoryStore'
 import {
     extractErrorMessage,
     showError,
@@ -25,6 +26,8 @@ const debtStore = useDebtStore()
 
 const goalStore = useGoalStore()
 
+const categoryStore = useExpenseCategoryStore()
+
 const showForm = ref(false)
 
 const editingExpense = ref(null)
@@ -39,7 +42,16 @@ const activeAccounts = computed(() =>
     accountStore.accounts.filter((account) => account.is_active)
 )
 
-function openCreate() {
+async function openCreate() {
+    // Tras recargar, las cuentas pueden no haber llegado aún: se espera antes de decidir.
+    try {
+        await accountStore.ensureLoaded()
+    } catch {
+        showError('No fue posible cargar las cuentas.')
+
+        return
+    }
+
     if (activeAccounts.value.length === 0) {
         showNoAccountsModal.value = true
 
@@ -151,6 +163,7 @@ onMounted(() => {
     expenseStore.fetchExpenses()
     debtStore.fetchDebts()
     goalStore.fetchGoals()
+    categoryStore.fetchCategories()
 
     accountStore.fetchAccounts().catch(() => {
         showError('No fue posible cargar las cuentas.')
@@ -228,6 +241,7 @@ onMounted(() => {
                     :accounts="activeAccounts"
                     :debts="debtStore.debts"
                     :goals="goalStore.goals"
+                    :categories="categoryStore.categories"
                     @submit="handleSaveExpense"
                     @cancel="handleCancel"
                 />

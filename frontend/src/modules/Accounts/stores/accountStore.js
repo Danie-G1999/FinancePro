@@ -12,7 +12,31 @@ export const useAccountStore = defineStore(
 
         const error = ref(null)
 
-        async function fetchAccounts() {
+        // Indica si ya hubo una carga exitosa; tras recargar la página la lista arranca vacía.
+        const loaded = ref(false)
+
+        let pending = null
+
+        function fetchAccounts() {
+            pending = loadAccounts().finally(() => {
+                pending = null
+            })
+
+            return pending
+        }
+
+        // Espera la carga en curso o la inicia si nunca se ha hecho.
+        async function ensureLoaded() {
+            if (pending) {
+                return pending
+            }
+
+            if (!loaded.value) {
+                return fetchAccounts()
+            }
+        }
+
+        async function loadAccounts() {
             loading.value = true
             error.value = null
 
@@ -21,6 +45,7 @@ export const useAccountStore = defineStore(
                     await accountService.getAll()
 
                 accounts.value = response.data
+                loaded.value = true
             } catch (err) {
                 console.error(
                     'Error loading accounts:',
@@ -93,7 +118,9 @@ export const useAccountStore = defineStore(
             accounts,
             loading,
             error,
+            loaded,
             fetchAccounts,
+            ensureLoaded,
             createAccount,
             updateAccount,
             deleteAccount,

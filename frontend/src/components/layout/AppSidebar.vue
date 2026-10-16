@@ -36,6 +36,11 @@ const navigation = [
                 icon: 'expense',
             },
             {
+                name: 'Categorías de gasto',
+                route: '/categorias-gasto',
+                icon: 'category',
+            },
+            {
                 name: 'Cuentas',
                 route: '/cuentas',
                 icon: 'account',
@@ -184,6 +189,17 @@ const isActive = (item) => {
                         >
                             <path d="M12 5v14" />
                             <path d="M18 13l-6 6-6-6" />
+                        </svg>
+
+                        <svg
+                            v-else-if="item.icon === 'category'"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                        >
+                            <path d="M3 12V4h8l10 10-8 8z" />
+                            <circle cx="7.5" cy="7.5" r="1.5" />
                         </svg>
 
                         <svg

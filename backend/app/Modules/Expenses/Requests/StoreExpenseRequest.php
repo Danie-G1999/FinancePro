@@ -46,7 +46,16 @@ class StoreExpenseRequest extends FormRequest
             'budget_type' => [
                 'nullable',
                 'required_without_all:debt_id,goal_id',
-                Rule::in([BudgetType::NEED->value, BudgetType::WANT->value]),
+                Rule::enum(BudgetType::class),
+            ],
+
+            // Debe pertenecer al bloque elegido; el servicio valida esa relación.
+            'expense_category_id' => [
+                'nullable',
+                'required_without_all:debt_id,goal_id',
+                'integer',
+                Rule::exists('expense_categories', 'id')
+                    ->where('user_id', $this->user()->id),
             ],
 
             'cost_type' => [
@@ -70,7 +79,9 @@ class StoreExpenseRequest extends FormRequest
             'debt_id.exists' => 'La deuda seleccionada no es válida.',
             'debt_id.prohibits' => 'Un gasto no puede ser pago de deuda y aporte a meta a la vez.',
             'goal_id.exists' => 'La meta seleccionada no es válida.',
-            'budget_type.required_without_all' => 'Selecciona la categoría del gasto.',
+            'budget_type.required_without_all' => 'Selecciona la categoría del presupuesto.',
+            'expense_category_id.required_without_all' => 'Selecciona la categoría del gasto.',
+            'expense_category_id.exists' => 'La categoría de gasto seleccionada no es válida.',
             'cost_type.required_without_all' => 'Indica si el gasto es fijo o variable.',
         ];
     }

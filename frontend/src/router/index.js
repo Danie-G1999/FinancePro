@@ -12,6 +12,7 @@ import AccountsView from '../modules/Accounts/views/AccountsView.vue'
 import TransactionsView from '../modules/Transactions/views/TransactionsView.vue'
 import IncomeView from '../modules/Income/views/IncomeView.vue'
 import ExpensesView from '../modules/Expenses/views/ExpensesView.vue'
+import ExpenseCategoriesView from '../modules/ExpenseCategories/views/ExpenseCategoriesView.vue'
 import DebtsView from '../modules/Debts/views/DebtsView.vue'
 import BudgetsView from '../modules/Budgets/views/BudgetsView.vue'
 import ReportsView from '../modules/Reports/views/ReportsView.vue'
@@ -81,6 +82,15 @@ const routes = [
                 path: 'gastos',
                 name: 'gastos',
                 component: ExpensesView,
+                meta: {
+                    requiresAuth: true,
+                },
+            },
+
+            {
+                path: 'categorias-gasto',
+                name: 'categorias-gasto',
+                component: ExpenseCategoriesView,
                 meta: {
                     requiresAuth: true,
                 },

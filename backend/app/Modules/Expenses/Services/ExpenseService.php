@@ -6,6 +6,7 @@ use App\Modules\Accounts\Enums\AccountType;
 use App\Modules\Accounts\Interfaces\AccountRepositoryInterface;
 use App\Modules\Budgets\Enums\BudgetType;
 use App\Modules\Budgets\Enums\CostType;
+use App\Modules\Categories\Interfaces\ExpenseCategoryRepositoryInterface;
 use App\Modules\Debts\Interfaces\DebtRepositoryInterface;
 use App\Modules\Expenses\Interfaces\ExpenseRepositoryInterface;
 use App\Modules\Goals\Interfaces\GoalRepositoryInterface;
@@ -23,7 +24,8 @@ class ExpenseService extends BaseService
         ExpenseRepositoryInterface $repository,
         private AccountRepositoryInterface $accounts,
         private DebtRepositoryInterface $debts,
-        private GoalRepositoryInterface $goals
+        private GoalRepositoryInterface $goals,
+        private ExpenseCategoryRepositoryInterface $categories
     ) {
         parent::__construct($repository);
     }
@@ -90,6 +92,10 @@ class ExpenseService extends BaseService
         if ($data['goal_id']) {
             $this->ensureValidGoalContribution($userId, $account, $data, $current);
         }
+
+        if ($data['expense_category_id']) {
+            $this->ensureValidCategory($userId, $data, $current);
+        }
     }
 
     /** Pagos de deuda y aportes a metas van al bloque de ahorro y deudas; el resto lo elige el usuario. */
@@ -97,13 +103,16 @@ class ExpenseService extends BaseService
     {
         $data['debt_id'] ??= null;
         $data['goal_id'] ??= null;
+        $data['expense_category_id'] ??= null;
 
         if ($data['debt_id']) {
             $data['budget_type'] = BudgetType::SAVINGS->value;
             $data['cost_type'] = CostType::FIXED->value;
+            $data['expense_category_id'] = null;
         } elseif ($data['goal_id']) {
             $data['budget_type'] = BudgetType::SAVINGS->value;
             $data['cost_type'] = null;
+            $data['expense_category_id'] = null;
         }
 
         return $data;
@@ -167,6 +176,32 @@ class ExpenseService extends BaseService
         }
     }
 
+    /** La categoría debe ser del bloque elegido y estar activa, salvo que el gasto ya la tuviera. */
+    private function ensureValidCategory(
+        int $userId,
+        array $data,
+        ?Model $current
+    ): void {
+        $category = $this->categories->findByUserOrFail(
+            $userId,
+            (int) $data['expense_category_id']
+        );
+
+        if ($category->budget_type->value !== $data['budget_type']) {
+            throw ValidationException::withMessages([
+                'expense_category_id' => "La categoría {$category->name} no pertenece a la categoría del presupuesto seleccionada.",
+            ]);
+        }
+
+        $keepsCurrent = $current && $current->expense_category_id === $category->getKey();
+
+        if (! $category->is_active && ! $keepsCurrent) {
+            throw ValidationException::withMessages([
+                'expense_category_id' => "La categoría {$category->name} está desactivada.",
+            ]);
+        }
+    }
+
     private function ensureValidGoalContribution(
         int $userId,
         Model $account,
@@ -199,4 +234,5 @@ class ExpenseService extends BaseService
                 'amount' => 'El valor supera lo que falta para completar la meta.',
             ]);
         }
-    }}
+    }
+}

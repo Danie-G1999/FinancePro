@@ -121,6 +121,14 @@ function formatDate(value) {
                             </span>
 
                             <span
+                                v-if="item.expense_category_name"
+                                class="cell-debt"
+                            >
+                                {{ item.expense_category_icon }}
+                                {{ item.expense_category_name }}
+                            </span>
+
+                            <span
                                 v-if="item.recurring_label"
                                 class="cell-debt"
                             >

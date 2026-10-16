@@ -24,6 +24,14 @@ class ExpenseResource extends JsonResource
 
             'goal_name' => $this->goal?->name,
 
+            'expense_category_id' => $this->expense_category_id,
+
+            'expense_category_name' => $this->expenseCategory?->name,
+
+            'expense_category_icon' => $this->expenseCategory?->icon,
+
+            'expense_category_color' => $this->expenseCategory?->color,
+
             'budget_type' => $this->budget_type?->value,
 
             'budget_type_label' => $this->budget_type?->label(),

@@ -11,6 +11,7 @@ use App\Modules\Transactions\TransactionsServiceProvider;
 use App\Modules\Profile\ProfileServiceProvider;
 use App\Modules\Goals\GoalsServiceProvider;
 use App\Modules\Budgets\BudgetsServiceProvider;
+use App\Modules\Categories\CategoriesServiceProvider;
 use App\Modules\Reports\ReportsServiceProvider;
 use App\Modules\Auth\Providers\AuthServiceProvider;
 
@@ -36,6 +37,8 @@ return [
     GoalsServiceProvider::class,
 
     BudgetsServiceProvider::class,
+
+    CategoriesServiceProvider::class,
 
     ReportsServiceProvider::class,
 

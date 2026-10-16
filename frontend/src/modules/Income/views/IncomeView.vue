@@ -42,7 +42,16 @@ const activeAccounts = computed(() =>
     accountStore.accounts.filter((account) => account.is_active)
 )
 
-function openCreate() {
+async function openCreate() {
+    // Tras recargar, las cuentas pueden no haber llegado aún: se espera antes de decidir.
+    try {
+        await accountStore.ensureLoaded()
+    } catch {
+        showError('No fue posible cargar las cuentas.')
+
+        return
+    }
+
     if (activeAccounts.value.length === 0) {
         showNoAccountsModal.value = true
 

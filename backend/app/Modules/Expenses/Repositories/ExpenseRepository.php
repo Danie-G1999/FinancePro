@@ -19,7 +19,7 @@ class ExpenseRepository extends BaseRepository implements ExpenseRepositoryInter
     {
         return $this->model
             ->newQuery()
-            ->with(['account:id,name,currency', 'debt:id,name', 'goal:id,name'])
+            ->with(['account:id,name,currency', 'debt:id,name', 'goal:id,name', 'expenseCategory:id,name,icon,color'])
             ->where('user_id', $userId)
             ->orderByDesc('spent_at')
             ->orderByDesc('id')
@@ -30,18 +30,18 @@ class ExpenseRepository extends BaseRepository implements ExpenseRepositoryInter
     {
         return $this->model
             ->newQuery()
-            ->with(['account:id,name,currency', 'debt:id,name', 'goal:id,name'])
+            ->with(['account:id,name,currency', 'debt:id,name', 'goal:id,name', 'expenseCategory:id,name,icon,color'])
             ->where('user_id', $userId)
             ->findOrFail($id);
     }
 
     public function create(array $data): Model
     {
-        return parent::create($data)->load(['account:id,name,currency', 'debt:id,name', 'goal:id,name']);
+        return parent::create($data)->load(['account:id,name,currency', 'debt:id,name', 'goal:id,name', 'expenseCategory:id,name,icon,color']);
     }
 
     public function update(int|string $id, array $data): Model
     {
-        return parent::update($id, $data)->load(['account:id,name,currency', 'debt:id,name', 'goal:id,name']);
+        return parent::update($id, $data)->load(['account:id,name,currency', 'debt:id,name', 'goal:id,name', 'expenseCategory:id,name,icon,color']);
     }
 }

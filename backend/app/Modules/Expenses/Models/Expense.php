@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Accounts\Models\Account;
 use App\Modules\Budgets\Enums\BudgetType;
 use App\Modules\Budgets\Enums\CostType;
+use App\Modules\Categories\Models\ExpenseCategory;
 use App\Modules\Debts\Models\Debt;
 use App\Modules\Goals\Models\Goal;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +21,7 @@ class Expense extends Model
         'account_id',
         'debt_id',
         'goal_id',
+        'expense_category_id',
         'budget_type',
         'cost_type',
         'description',
@@ -56,5 +58,10 @@ class Expense extends Model
     public function goal(): BelongsTo
     {
         return $this->belongsTo(Goal::class);
+    }
+
+    public function expenseCategory(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseCategory::class);
     }
 }

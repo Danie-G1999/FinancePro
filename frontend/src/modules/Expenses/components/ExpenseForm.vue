@@ -7,6 +7,8 @@ import {
     moneyInputToNumber,
     numberToMoneyInput,
 } from '../../../utils/money'
+import { classifyExpense, suggestCategory } from '../utils/classifyExpense'
+import { BUDGET_TYPES } from '../../ExpenseCategories/utils/budgetTypes'
 
 const props = defineProps({
     expense: {
@@ -28,6 +30,12 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+
+    // Todas las categorías de gasto del usuario, activas e inactivas.
+    categories: {
+        type: Array,
+        default: () => [],
+    },
 })
 
 const emit = defineEmits(['submit', 'cancel'])
@@ -43,8 +51,18 @@ function todayLocal() {
     return `${now.getFullYear()}-${month}-${day}`
 }
 
+// Por defecto, la primera cuenta con la que realmente se puede pagar.
+function defaultAccountId() {
+    const payable = props.accounts.find(
+        (account) =>
+            account.type === 'credit_card' || Number(account.balance) > 0
+    )
+
+    return (payable ?? props.accounts[0])?.id ?? ''
+}
+
 const form = reactive({
-    account_id: props.expense?.account_id ?? props.accounts[0]?.id ?? '',
+    account_id: props.expense?.account_id ?? defaultAccountId(),
     description: props.expense?.description ?? '',
     amount: props.expense?.amount ?? '',
     spent_at: props.expense?.spent_at ?? todayLocal(),
@@ -53,9 +71,8 @@ const form = reactive({
     debt_id: props.expense?.debt_id ?? '',
     pays_goal: Boolean(props.expense?.goal_id),
     goal_id: props.expense?.goal_id ?? '',
-    budget_type: ['need', 'want'].includes(props.expense?.budget_type)
-        ? props.expense.budget_type
-        : 'need',
+    budget_type: props.expense?.budget_type ?? '',
+    expense_category_id: props.expense?.expense_category_id ?? '',
     cost_type: props.expense?.cost_type ?? 'variable',
 })
 
@@ -169,11 +186,110 @@ const goalCurrencyMismatch = computed(
 // Pagos de deuda y aportes a metas se clasifican solos en el backend.
 const isClassifiable = computed(() => !form.pays_debt && !form.pays_goal)
 
+// Solo las del bloque elegido; una inactiva se conserva si el gasto ya la tenía.
+const availableCategories = computed(() =>
+    props.categories.filter(
+        (category) =>
+            category.budget_type === form.budget_type &&
+            (category.is_active ||
+                category.id === props.expense?.expense_category_id)
+    )
+)
+
+// Al cambiar de bloque, la categoría anterior ya no aplica (salvo que la sugerencia
+// haya puesto bloque y categoría a la vez).
+watch(
+    () => form.budget_type,
+    (budgetType) => {
+        const current = props.categories.find(
+            (category) => category.id === Number(form.expense_category_id)
+        )
+
+        if (current?.budget_type !== budgetType) {
+            form.expense_category_id = ''
+        }
+    }
+)
+
+// Valores sugeridos por la deuda; solo se limpian si el usuario no los modificó.
+const debtAutofill = { description: null, amount: null }
+
+function clearDebtAutofill() {
+    if (debtAutofill.description !== null && form.description === debtAutofill.description) {
+        form.description = ''
+    }
+
+    if (debtAutofill.amount !== null && form.amount === debtAutofill.amount) {
+        form.amount = ''
+        display.amount = ''
+    }
+
+    debtAutofill.description = null
+    debtAutofill.amount = null
+}
+
+// Lo que el usuario elige a mano deja de sugerirse automáticamente.
+const budgetTypeTouched = ref(Boolean(props.expense))
+const categoryTouched = ref(Boolean(props.expense))
+const autoClassified = ref(false)
+const autoCategorized = ref(false)
+
+// Primero intenta la categoría de gasto (que ya implica el bloque); si no hay
+// coincidencia, cae al clasificador de bloque por palabras clave.
+watch(
+    () => form.description,
+    (description) => {
+        if (categoryTouched.value) {
+            return
+        }
+
+        const candidates = props.categories.filter(
+            (category) =>
+                category.is_active &&
+                (!budgetTypeTouched.value ||
+                    category.budget_type === form.budget_type)
+        )
+
+        const category = suggestCategory(description, candidates)
+
+        if (category) {
+            if (!budgetTypeTouched.value) {
+                form.budget_type = category.budget_type
+                autoClassified.value = true
+            }
+
+            form.expense_category_id = category.id
+            autoCategorized.value = true
+
+            return
+        }
+
+        // La descripción ya no coincide: se retira la sugerencia anterior.
+        if (autoCategorized.value) {
+            form.expense_category_id = ''
+            autoCategorized.value = false
+        }
+
+        if (budgetTypeTouched.value) {
+            return
+        }
+
+        const suggested = classifyExpense(description)
+
+        if (suggested) {
+            form.budget_type = suggested
+        }
+
+        autoClassified.value = suggested !== null
+    }
+)
+
 watch(
     () => form.pays_debt,
     (value) => {
         if (!value) {
             form.debt_id = ''
+            clearDebtAutofill()
         } else {
             form.pays_goal = false
         }
@@ -208,12 +324,14 @@ watch(selectedDebt, (debt) => {
 
     if (!form.description.trim()) {
         form.description = `Pago de deuda: ${debt.name}`
+        debtAutofill.description = form.description
     }
 
     if (!form.amount) {
         const suggested = Number(debt.monthly_payment) || debtRemaining.value
 
         setAmount(Math.min(suggested, debtRemaining.value))
+        debtAutofill.amount = form.amount
     }
 })
 
@@ -268,6 +386,14 @@ function validate() {
         errors.value.spent_at = 'La fecha es obligatoria.'
     }
 
+    if (isClassifiable.value && !form.budget_type) {
+        errors.value.budget_type = 'Selecciona la categoría del presupuesto.'
+    }
+
+    if (isClassifiable.value && form.budget_type && !form.expense_category_id) {
+        errors.value.expense_category_id = 'Selecciona la categoría del gasto.'
+    }
+
     return Object.keys(errors.value).length === 0
 }
 
@@ -288,6 +414,9 @@ async function handleSubmit() {
             goal_id: form.pays_goal ? Number(form.goal_id) : null,
             budget_type: isClassifiable.value ? form.budget_type : null,
             cost_type: isClassifiable.value ? form.cost_type : null,
+            expense_category_id: isClassifiable.value
+                ? Number(form.expense_category_id)
+                : null,
             notes: form.notes.trim() || null,
         })
     } finally {
@@ -646,17 +775,106 @@ function handleCancel() {
                 <label for="expense-budget-type" class="form-label">
                     Categoría del presupuesto
                     <span class="required">*</span>
+
+                    <span
+                        class="info-tip"
+                        tabindex="0"
+                        role="note"
+                        aria-label="Información sobre la regla 50/30/20"
+                    >
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 11v5" />
+                            <path d="M12 8h.01" />
+                        </svg>
+
+                        <span class="info-tip-content">
+                            Aplicamos la regla 50/30/20 sobre tus ingresos:
+                            <br>
+                            50% necesidades <br>30% deseos <br>20% ahorro y
+                            metas. <br>Los pagos de deuda y aportes a metas se
+                            clasifican automáticamente.
+                        </span>
+                    </span>
                 </label>
 
                 <select
                     id="expense-budget-type"
                     v-model="form.budget_type"
                     class="form-input"
+                    :class="{ 'input-error': errors.budget_type }"
                     :disabled="loading"
+                    @change="budgetTypeTouched = true; autoClassified = false; autoCategorized = false"
                 >
-                    <option value="need">Necesidad (50%)</option>
-                    <option value="want">Deseo (30%)</option>
+                    <option value="" disabled>
+                        Selecciona una categoría
+                    </option>
+
+                    <option
+                        v-for="type in BUDGET_TYPES"
+                        :key="type.value"
+                        :value="type.value"
+                    >
+                        {{ type.label }}
+                    </option>
                 </select>
+
+                <span v-if="errors.budget_type" class="form-error">
+                    {{ errors.budget_type }}
+                </span>
+
+                <span v-else-if="autoClassified" class="form-help">
+                    Clasificado automáticamente según la descripción. Puedes cambiarlo.
+                </span>
+            </div>
+
+            <div class="form-group">
+                <label for="expense-category" class="form-label">
+                    Categoría de gasto
+                    <span class="required">*</span>
+                </label>
+
+                <!-- Elegirla a mano detiene las sugerencias según la descripción. -->
+                <select
+                    id="expense-category"
+                    v-model="form.expense_category_id"
+                    class="form-input"
+                    :class="{ 'input-error': errors.expense_category_id }"
+                    :disabled="loading || !form.budget_type || availableCategories.length === 0"
+                    @change="budgetTypeTouched = true; categoryTouched = true; autoCategorized = false"
+                >
+                    <option value="" disabled>
+                        {{
+                            form.budget_type
+                                ? 'Selecciona una categoría de gasto'
+                                : 'Primero elige la categoría del presupuesto'
+                        }}
+                    </option>
+
+                    <option
+                        v-for="category in availableCategories"
+                        :key="category.id"
+                        :value="category.id"
+                    >
+                        {{ category.icon ? `${category.icon} ` : '' }}{{ category.name }}{{ category.is_active ? '' : ' (inactiva)' }}
+                    </option>
+                </select>
+
+                <span v-if="errors.expense_category_id" class="form-error">
+                    {{ errors.expense_category_id }}
+                </span>
+
+                <span v-else-if="autoCategorized" class="form-help">
+                    Sugerida según la descripción. Puedes cambiarla.
+                </span>
+
+                <span
+                    v-else-if="form.budget_type && availableCategories.length === 0"
+                    class="form-help"
+                >
+                    No tienes categorías activas en este bloque.
+                    <router-link to="/categorias-gasto">Crear una</router-link>
+                </span>
             </div>
 
             <div class="form-group">
