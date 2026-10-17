@@ -72,8 +72,9 @@ export const useAuthStore = defineStore(
                 const response = await api.post('/auth/onboarding/complete')
 
                 user.value = response.data.data
-            } catch {
-                // Si falla, el recorrido solo volvería a mostrarse en la próxima carga.
+            } catch (error) {
+                // No bloquea al usuario, pero el recorrido reaparecerá al recargar: debe verse en consola.
+                console.error('No fue posible guardar el recorrido guiado como visto:', error)
             }
         }
 

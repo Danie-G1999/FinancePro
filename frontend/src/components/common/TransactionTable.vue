@@ -70,7 +70,10 @@ function formatDate(value) {
 
         <div class="table-scroll">
 
-            <table class="transaction-table">
+            <table
+                class="transaction-table"
+                :class="{ 'has-type': showType }"
+            >
 
                 <thead>
                     <tr>
@@ -88,11 +91,11 @@ function formatDate(value) {
                         v-for="item in items"
                         :key="item.id"
                     >
-                        <td class="nowrap">
+                        <td class="nowrap cell-date">
                             {{ formatDate(item[dateKey]) }}
                         </td>
 
-                        <td v-if="showType">
+                        <td v-if="showType" class="cell-type">
                             <span
                                 class="type-badge"
                                 :class="item.type"
@@ -101,7 +104,7 @@ function formatDate(value) {
                             </span>
                         </td>
 
-                        <td>
+                        <td class="cell-description">
                             <span class="cell-title">
                                 {{ item.description }}
                             </span>
@@ -143,18 +146,18 @@ function formatDate(value) {
                             </span>
                         </td>
 
-                        <td>
+                        <td class="cell-account">
                             {{ item.account_name }}
                         </td>
 
                         <td
-                            class="text-right"
+                            class="text-right cell-amount"
                             :class="amountClass(item, variant)"
                         >
                             {{ variant === 'mixed' ? (item.type === 'income' ? '+' : '-') : '' }}{{ formatMoney(item.amount, item.currency) }}
                         </td>
 
-                        <td class="text-right">
+                        <td class="text-right cell-actions">
                             <div class="row-actions">
                                 <button
                                     v-if="actions.includes('view')"

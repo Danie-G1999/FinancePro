@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useAuthStore } from '../../Auth/stores/authStore'
+import { useLayoutStore } from '../../../components/layout/layoutStore'
 import { useTourStore } from '../stores/tourStore'
 import { TOUR_STEPS } from '../utils/tourSteps'
 
@@ -14,6 +15,15 @@ const SPOTLIGHT_PADDING = 6
 const router = useRouter()
 const authStore = useAuthStore()
 const tourStore = useTourStore()
+const layout = useLayoutStore()
+
+// En escritorio se omiten los pasos que solo aplican al menú hamburguesa.
+const steps = computed(() =>
+    TOUR_STEPS.filter((item) => !item.mobileOnly || layout.isMobile)
+)
+
+// Lo que tarda en abrirse o cerrarse el menú móvil (ver .sidebar-mobile).
+const MENU_TRANSITION_MS = 280
 
 const index = ref(0)
 const rect = ref(null)
@@ -21,10 +31,10 @@ const card = ref(null)
 const primaryButton = ref(null)
 const position = ref({ top: 0, left: 0, placement: 'center', arrow: 0 })
 
-const step = computed(() => TOUR_STEPS[index.value])
+const step = computed(() => steps.value[Math.min(index.value, steps.value.length - 1)])
 const isFirst = computed(() => index.value === 0)
-const isLast = computed(() => index.value === TOUR_STEPS.length - 1)
-const progress = computed(() => (index.value / (TOUR_STEPS.length - 1)) * 100)
+const isLast = computed(() => index.value === steps.value.length - 1)
+const progress = computed(() => (index.value / (steps.value.length - 1)) * 100)
 
 const firstName = computed(() => authStore.user?.name?.trim().split(/\s+/)[0] ?? '')
 
@@ -112,8 +122,39 @@ function placeCard() {
     }
 }
 
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// En móvil, los elementos de la barra lateral solo se ven con el menú abierto.
+async function syncMobileMenu(element) {
+    if (!layout.isMobile) {
+        return
+    }
+
+    const inSidebar = Boolean(element?.closest('#app-sidebar'))
+
+    if (inSidebar && !layout.menuOpen) {
+        layout.openMenu()
+        await wait(MENU_TRANSITION_MS)
+    } else if (!inSidebar && layout.menuOpen) {
+        layout.closeMenu()
+        await wait(MENU_TRANSITION_MS)
+    }
+}
+
+// Evita que una ubicación vieja pise a la nueva si el usuario avanza rápido.
+let locateRun = 0
+
 async function locate() {
+    const run = ++locateRun
     const element = findTarget()
+
+    await syncMobileMenu(element)
+
+    if (run !== locateRun || !tourStore.active) {
+        return
+    }
 
     if (element) {
         element.scrollIntoView({ block: 'nearest', inline: 'nearest' })
@@ -137,7 +178,7 @@ async function locate() {
 }
 
 function goTo(newIndex) {
-    index.value = clamp(newIndex, 0, TOUR_STEPS.length - 1)
+    index.value = clamp(newIndex, 0, steps.value.length - 1)
 }
 
 function next() {
@@ -154,6 +195,7 @@ function previous() {
 
 function finish(goToAccounts = false) {
     tourStore.stop()
+    layout.closeMenu()
     authStore.completeOnboarding()
 
     if (goToAccounts) {
@@ -267,7 +309,7 @@ onBeforeUnmount(() => {
                                 <span class="tour-icon">{{ step.icon }}</span>
 
                                 <span class="tour-counter">
-                                    Paso {{ index + 1 }} de {{ TOUR_STEPS.length }}
+                                    Paso {{ index + 1 }} de {{ steps.length }}
                                 </span>
                             </div>
 
@@ -290,7 +332,7 @@ onBeforeUnmount(() => {
                         aria-label="Pasos del recorrido"
                     >
                         <button
-                            v-for="(item, i) in TOUR_STEPS"
+                            v-for="(item, i) in steps"
                             :key="i"
                             type="button"
                             class="tour-dot"

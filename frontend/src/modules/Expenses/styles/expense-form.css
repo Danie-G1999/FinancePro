@@ -43,7 +43,7 @@
     transform: translateX(-50%);
     z-index: 10;
 
-    width: 260px;
+    width: min(260px, calc(100vw - 48px));
     padding: 10px 12px;
 
     border-radius: var(--radius-md);

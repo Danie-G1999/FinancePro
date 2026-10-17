@@ -141,6 +141,87 @@
     .table-footer {
         flex-direction: column;
     }
+
+    /* Cada fila pasa a ser una tarjeta: descripción y valor arriba;
+       fecha, cuenta y acciones abajo. Sin scroll horizontal. */
+    .transaction-table,
+    .transaction-table tbody {
+        display: block;
+    }
+
+    .transaction-table thead {
+        display: none;
+    }
+
+    .transaction-table tr {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas:
+            "description description amount"
+            "date account actions";
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 6px;
+
+        padding: 12px 14px;
+
+        border-bottom: 1px solid var(--color-border-light);
+    }
+
+    .transaction-table.has-type tr {
+        grid-template-areas:
+            "type description amount"
+            "date account actions";
+    }
+
+    .transaction-table td {
+        padding: 0;
+
+        border: 0;
+    }
+
+    .transaction-table .cell-type {
+        grid-area: type;
+    }
+
+    .transaction-table .cell-description {
+        grid-area: description;
+        min-width: 0;
+    }
+
+    .transaction-table .cell-amount {
+        grid-area: amount;
+        align-self: start;
+    }
+
+    .transaction-table .cell-date {
+        grid-area: date;
+
+        color: var(--color-text-muted);
+
+        font-size: 12px;
+    }
+
+    .transaction-table .cell-account {
+        grid-area: account;
+        min-width: 0;
+
+        overflow: hidden;
+
+        color: var(--color-text-muted);
+
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .transaction-table .cell-actions {
+        grid-area: actions;
+    }
+
+    .cell-notes {
+        max-width: 100%;
+    }
 }
 /* =========================================================
    BUTTONS / ACTIONS

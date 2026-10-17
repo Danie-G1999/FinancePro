@@ -180,3 +180,10 @@
     font-weight: 700;
     white-space: nowrap;
 }
+
+@media (max-width: 480px) {
+    .modal {
+        max-height: 90vh;
+        padding: 18px;
+    }
+}

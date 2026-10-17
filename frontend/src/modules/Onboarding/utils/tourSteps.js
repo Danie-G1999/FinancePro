@@ -1,10 +1,18 @@
 // Pasos del recorrido guiado. `target` apunta a un elemento con data-tour="...";
 // sin target, la tarjeta aparece centrada sobre la pantalla oscurecida.
+// `mobileOnly` muestra el paso solo cuando el menú es hamburguesa.
 export const TOUR_STEPS = [
     {
         icon: '👋',
         title: (name) => `¡Bienvenido a FinancePro${name ? `, ${name}` : ''}!`,
         body: 'Te mostramos en un minuto dónde está cada cosa para que empieces a controlar tu dinero. Tus datos son privados: solo tú los ves.',
+    },
+    {
+        target: 'menu-button',
+        mobileOnly: true,
+        icon: '☰',
+        title: 'Tu menú',
+        body: 'Toca este botón para abrir el menú y moverte entre las secciones. Te mostramos qué hay en cada una.',
     },
     {
         target: 'cuentas',

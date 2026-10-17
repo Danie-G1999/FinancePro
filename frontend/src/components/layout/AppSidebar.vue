@@ -1,10 +1,30 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+
+import { useLayoutStore } from './layoutStore'
 
 const route = useRoute()
 
+const layout = useLayoutStore()
+
 const collapsed = ref(false)
+
+// En móvil el menú siempre se muestra completo; el modo compacto es solo de escritorio.
+const compact = computed(() => collapsed.value && !layout.isMobile)
+
+// Al navegar desde el menú móvil, se cierra para mostrar la página.
+watch(() => route.fullPath, () => layout.closeMenu())
+
+function handleKeydown(event) {
+    if (event.key === 'Escape' && layout.menuOpen) {
+        layout.closeMenu()
+    }
+}
+
+onMounted(() => document.addEventListener('keydown', handleKeydown))
+
+onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 
 const navigation = [
     {
@@ -76,8 +96,15 @@ const isActive = (item) => {
 
 <template>
     <aside
+        id="app-sidebar"
         class="sidebar"
-        :class="{ 'sidebar-collapsed': collapsed }"
+        :class="{
+            'sidebar-collapsed': compact,
+            'sidebar-mobile': layout.isMobile,
+            'sidebar-open': layout.menuOpen,
+        }"
+        :aria-hidden="layout.isMobile && !layout.menuOpen ? 'true' : undefined"
+        :inert="layout.isMobile && !layout.menuOpen ? true : undefined"
     >
         <div class="sidebar-header">
             <div class="brand">
@@ -86,7 +113,7 @@ const isActive = (item) => {
                 </div>
 
                 <div
-                    v-if="!collapsed"
+                    v-if="!compact"
                     class="brand-content"
                 >
                     <strong>FinancePro</strong>
@@ -95,8 +122,28 @@ const isActive = (item) => {
             </div>
 
             <button
+                v-if="layout.isMobile"
                 class="collapse-button"
                 type="button"
+                aria-label="Cerrar menú"
+                @click="layout.closeMenu()"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path d="M6 6l12 12" />
+                    <path d="M18 6L6 18" />
+                </svg>
+            </button>
+
+            <button
+                v-else
+                class="collapse-button"
+                type="button"
+                :aria-label="collapsed ? 'Expandir menú' : 'Contraer menú'"
                 @click="collapsed = !collapsed"
             >
                 <svg
@@ -128,7 +175,7 @@ const isActive = (item) => {
                 class="navigation-section"
             >
                 <span
-                    v-if="!collapsed"
+                    v-if="!compact"
                     class="section-title"
                 >
                     {{ section.label }}
@@ -141,7 +188,7 @@ const isActive = (item) => {
                     class="navigation-item"
                     :class="{ active: isActive(item) }"
                     :data-tour="item.route.slice(1)"
-                    :title="collapsed ? item.name : undefined"
+                    :title="compact ? item.name : undefined"
                 >
                     <span class="navigation-icon">
                         <svg
@@ -256,7 +303,7 @@ const isActive = (item) => {
                     </span>
 
                     <span
-                        v-if="!collapsed"
+                        v-if="!compact"
                         class="navigation-label"
                     >
                         {{ item.name }}
@@ -267,7 +314,7 @@ const isActive = (item) => {
 
         <div class="sidebar-footer">
             <div class="version">
-                <span v-if="!collapsed">FinancePro v1.0</span>
+                <span v-if="!compact">FinancePro v1.0</span>
             </div>
         </div>
     </aside>
@@ -288,6 +335,31 @@ const isActive = (item) => {
         width 0.2s ease,
         min-width 0.2s ease;
     z-index: 30;
+}
+
+/* Móvil: panel deslizable sobre el contenido. */
+.sidebar-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(290px, 86vw);
+    min-width: 0;
+    height: 100dvh;
+    transform: translateX(-100%);
+    box-shadow: none;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+    z-index: 1000;
+}
+
+.sidebar-mobile.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 12px 0 32px rgba(15, 23, 42, 0.35);
+}
+
+.sidebar-mobile .sidebar-header {
+    height: 70px;
 }
 
 .sidebar-collapsed {

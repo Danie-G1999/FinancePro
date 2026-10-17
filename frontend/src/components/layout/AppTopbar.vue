@@ -3,11 +3,13 @@ import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../modules/Auth/stores/authStore'
 import { useTourStore } from '../../modules/Onboarding/stores/tourStore'
+import { useLayoutStore } from './layoutStore'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const tourStore = useTourStore()
+const layout = useLayoutStore()
 
 const showUserMenu = ref(false)
 
@@ -148,12 +150,37 @@ onBeforeUnmount(() => {
 
 <template>
     <header class="topbar">
-        <div class="page-heading">
-            <h1>{{ currentPage.title }}</h1>
+        <div class="topbar-start">
+            <button
+                v-if="layout.isMobile"
+                class="menu-button"
+                type="button"
+                data-tour="menu-button"
+                aria-controls="app-sidebar"
+                :aria-expanded="layout.menuOpen"
+                aria-label="Abrir menú"
+                @click="layout.toggleMenu()"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                >
+                    <path d="M4 7h16" />
+                    <path d="M4 12h16" />
+                    <path d="M4 17h16" />
+                </svg>
+            </button>
 
-            <span>
-                {{ currentPage.subtitle }}
-            </span>
+            <div class="page-heading">
+                <h1>{{ currentPage.title }}</h1>
+
+                <span>
+                    {{ currentPage.subtitle }}
+                </span>
+            </div>
         </div>
 
         <div class="topbar-actions">
