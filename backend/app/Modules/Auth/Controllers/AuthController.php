@@ -9,6 +9,7 @@ use App\Modules\Auth\Requests\RegisterRequest;
 use App\Modules\Auth\Resources\UserResource;
 use App\Modules\Auth\Services\AuthService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class AuthController
@@ -18,7 +19,7 @@ class AuthController
     ) {
     }
 
-    public function register(RegisterRequest $request): UserResource
+    public function register(RegisterRequest $request): JsonResponse
     {
         $dto = new RegisterDTO(
             name: $request->string('name')->toString(),
@@ -28,7 +29,14 @@ class AuthController
 
         $user = $this->authService->register($dto);
 
-        return new UserResource($user);
+        // Queda con la sesión iniciada para entrar directo a su panel.
+        Auth::guard('web')->login($user);
+
+        $request->session()->regenerate();
+
+        return (new UserResource($user))
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function login(LoginRequest $request): UserResource
@@ -56,6 +64,18 @@ class AuthController
         return response()->json([
             'message' => 'Sesión cerrada correctamente.',
         ]);
+    }
+
+    /** Marca el recorrido guiado como visto (terminado o saltado); solo cuenta la primera vez. */
+    public function completeOnboarding(Request $request): UserResource
+    {
+        $user = $request->user();
+
+        if ($user->onboarding_completed_at === null) {
+            $user->forceFill(['onboarding_completed_at' => now()])->save();
+        }
+
+        return new UserResource($user);
     }
 
     public function me(): UserResource

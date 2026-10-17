@@ -140,6 +140,7 @@ const isActive = (item) => {
                     :to="item.route"
                     class="navigation-item"
                     :class="{ active: isActive(item) }"
+                    :data-tour="item.route.slice(1)"
                     :title="collapsed ? item.name : undefined"
                 >
                     <span class="navigation-icon">

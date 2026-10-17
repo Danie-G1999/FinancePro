@@ -29,6 +29,16 @@ const routes = [
         },
     },
 
+    // Misma vista: cambia entre el formulario de ingreso y el de registro.
+    {
+        path: '/registro',
+        name: 'register',
+        component: LoginView,
+        meta: {
+            guest: true,
+        },
+    },
+
     {
         path: '/',
         component: MainLayout,

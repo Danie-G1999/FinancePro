@@ -11,6 +11,13 @@ class LoginRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->email)) {
+            $this->merge(['email' => mb_strtolower(trim($this->email))]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -28,6 +35,15 @@ class LoginRequest extends FormRequest
                 'sometimes',
                 'boolean',
             ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'El correo es obligatorio.',
+            'email.email' => 'Ingresa un correo válido.',
+            'password.required' => 'La contraseña es obligatoria.',
         ];
     }
 }

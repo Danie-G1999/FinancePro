@@ -15,6 +15,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'photo_url' => $this->profile?->photoUrl(),
             'email_verified_at' => $this->email_verified_at,
+            'onboarding_completed' => $this->onboarding_completed_at !== null,
             'created_at' => $this->created_at,
         ];
     }

@@ -2,10 +2,12 @@
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../modules/Auth/stores/authStore'
+import { useTourStore } from '../../modules/Onboarding/stores/tourStore'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const tourStore = useTourStore()
 
 const showUserMenu = ref(false)
 
@@ -103,6 +105,12 @@ const goToProfile = () => {
     })
 }
 
+const startTour = () => {
+    closeUserMenu()
+
+    tourStore.start()
+}
+
 const goToSettings = () => {
     closeUserMenu()
 
@@ -116,9 +124,9 @@ const logout = async () => {
 
     await authStore.logout()
 
-    router.push({
-        name: 'login',
-    })
+    // Recarga completa: borra de memoria los datos del usuario que cerró sesión
+    // para que quien entre después en esta pestaña no los vea.
+    window.location.replace(router.resolve({ name: 'login' }).href)
 }
 
 const handleClickOutside = (event) => {
@@ -172,7 +180,7 @@ onBeforeUnmount(() => {
 
             <div class="separator"></div>
 
-            <div class="user-container">
+            <div class="user-container" data-tour="user-menu">
                 <button
                     class="user-trigger"
                     type="button"
@@ -260,6 +268,15 @@ onBeforeUnmount(() => {
                     >
                         <span>⚙</span>
                         <span>Configuración</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        @click="startTour"
+                    >
+                        <span>🧭</span>
+                        <span>Ver recorrido guiado</span>
                     </button>
 
                     <div class="dropdown-divider"></div>

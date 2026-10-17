@@ -1,6 +1,7 @@
 <script setup>
 import AppSidebar from '../components/layout/AppSidebar.vue'
 import AppTopbar from '../components/layout/AppTopbar.vue'
+import AppTour from '../modules/Onboarding/components/AppTour.vue'
 </script>
 
 <template>
@@ -14,6 +15,8 @@ import AppTopbar from '../components/layout/AppTopbar.vue'
                 <router-view />
             </main>
         </div>
+
+        <AppTour />
     </div>
 </template>
 
