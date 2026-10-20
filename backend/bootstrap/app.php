@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // En Render un proxy termina el HTTPS: sin esto Laravel vería "http" (cookies
+        // seguras y URL de Google mal) y la IP del proxy en vez de la del usuario
+        // (el límite de intentos bloquearía a todos a la vez).
+        $middleware->trustProxies(at: '*');
+
         $middleware->statefulApi();
 
         // Primero la autorización de datos: sin ella no se procesa nada del usuario.

@@ -1,0 +1,35 @@
+# Secretos: las variables se definen en Render, nunca dentro de la imagen.
+.env
+.env.*
+!.env.example
+
+# Se instalan/generan dentro de la imagen.
+vendor
+node_modules
+public/storage
+public/hot
+public/build
+
+# Bases locales y datos de desarrollo.
+finance_pro
+*.sqlite
+*.sqlite-journal
+database/*.sqlite
+
+# Estado local de Laravel.
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/public/*
+bootstrap/cache/*.php
+
+# Desarrollo.
+tests
+phpunit.xml
+.phpunit.result.cache
+.git
+.github
+.idea
+.vscode
+*.log

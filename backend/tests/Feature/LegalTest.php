@@ -144,4 +144,18 @@ class LegalTest extends TestCase
     {
         $this->postJson('/api/legal/accept', ['documents' => ['terms']])->assertUnauthorized();
     }
+
+    public function test_behind_a_proxy_the_real_client_ip_is_recorded(): void
+    {
+        // Como en Render: el proxy agrega la IP real y el esquema original.
+        $this->withHeaders([
+            'X-Forwarded-For' => '203.0.113.7',
+            'X-Forwarded-Proto' => 'https',
+        ])->postJson('/api/auth/register', $this->registration())->assertCreated();
+
+        $this->assertSame(
+            ['203.0.113.7'],
+            LegalAcceptance::query()->distinct()->pluck('ip_address')->all()
+        );
+    }
 }
