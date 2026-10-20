@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+import { API_URL } from './config'
+
 const sanctum = axios.create({
-    baseURL: 'http://localhost:8001',
+    baseURL: API_URL,
 
     withCredentials: true,
 
