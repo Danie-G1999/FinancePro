@@ -1,10 +1,19 @@
 <script setup>
+import { computed } from 'vue'
+
 import AppSidebar from '../components/layout/AppSidebar.vue'
 import AppTopbar from '../components/layout/AppTopbar.vue'
 import { useLayoutStore } from '../components/layout/layoutStore'
 import AppTour from '../modules/Onboarding/components/AppTour.vue'
+import LegalGate from '../modules/Legal/components/LegalGate.vue'
+import { useAuthStore } from '../modules/Auth/stores/authStore'
 
 const layout = useLayoutStore()
+
+const authStore = useAuthStore()
+
+// Sin autorización vigente el backend rechaza todo; no se montan las páginas hasta aceptar.
+const legalPending = computed(() => (authStore.user?.legal?.pending?.length ?? 0) > 0)
 </script>
 
 <template>
@@ -24,9 +33,11 @@ const layout = useLayoutStore()
             <AppTopbar />
 
             <main class="app-content">
-                <router-view />
+                <router-view v-if="!legalPending" />
             </main>
         </div>
+
+        <LegalGate v-if="legalPending" />
 
         <AppTour />
     </div>

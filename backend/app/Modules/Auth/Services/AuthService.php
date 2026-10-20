@@ -25,6 +25,19 @@ class AuthService
 
     public function login(LoginDTO $dto): User
     {
+        // Cuentas creadas con Google no tienen contraseña: se les indica cómo entrar.
+        $googleOnly = User::query()
+            ->where('email', $dto->email)
+            ->whereNull('password')
+            ->whereNotNull('google_id')
+            ->exists();
+
+        if ($googleOnly) {
+            throw ValidationException::withMessages([
+                'email' => ['Esta cuenta se creó con Google. Usa "Continuar con Google" para entrar.'],
+            ]);
+        }
+
         if (!Auth::attempt(
             $dto->credentials(),
             $dto->remember

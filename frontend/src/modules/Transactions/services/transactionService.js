@@ -1,8 +1,8 @@
 import api from '../../../api/axios'
 
 export const transactionService = {
-    async getAll(params = {}) {
-        const response = await api.get('/transactions', { params })
+    async getAll(params = {}, { signal } = {}) {
+        const response = await api.get('/transactions', { params, signal })
 
         return response.data
     },

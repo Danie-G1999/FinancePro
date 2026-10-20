@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import axios from 'axios'
 import { reactive, ref } from 'vue'
 
 import { transactionService } from '../services/transactionService'
@@ -36,19 +37,32 @@ export const useTransactionStore = defineStore('transactions', () => {
         return Object.keys(activeFilters()).length > 0
     }
 
+    // Cada búsqueda cancela la anterior: si no, una respuesta lenta de "Dom" podría
+    // llegar después de la de "Domicilio" y dejar en la tabla resultados que no corresponden.
+    let controller = null
+
     async function fetchTransactions(page = 1) {
+        controller?.abort()
+
+        const current = new AbortController()
+        controller = current
+
         loading.value = true
         error.value = null
 
         try {
-            const response = await transactionService.getAll({
-                ...activeFilters(),
-                page,
-            })
+            const response = await transactionService.getAll(
+                { ...activeFilters(), page },
+                { signal: current.signal }
+            )
 
             transactions.value = response.data
             meta.value = response.meta
         } catch (err) {
+            if (axios.isCancel(err)) {
+                return
+            }
+
             const data = err.response?.data
 
             error.value =
@@ -56,7 +70,10 @@ export const useTransactionStore = defineStore('transactions', () => {
                 data?.message ??
                 'No fue posible cargar los movimientos.'
         } finally {
-            loading.value = false
+            // Solo la petición vigente apaga el indicador de carga.
+            if (controller === current) {
+                loading.value = false
+            }
         }
     }
 

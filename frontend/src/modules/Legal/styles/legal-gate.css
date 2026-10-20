@@ -1,0 +1,242 @@
+/* Por encima de todo (menú móvil 1000, recorrido guiado 2000). */
+.gate-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 16px;
+
+    background: rgba(15, 23, 42, 0.72);
+}
+
+.gate-card {
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    max-width: 640px;
+    max-height: 92vh;
+    max-height: 92dvh;
+
+    border-radius: 16px;
+
+    background: var(--color-surface);
+
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.3);
+}
+
+.gate-header {
+    display: flex;
+    gap: 14px;
+
+    padding: 22px 24px 16px;
+
+    border-bottom: 1px solid var(--color-border);
+}
+
+.gate-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+
+    border-radius: 12px;
+
+    background: var(--color-primary-light);
+
+    font-size: 22px;
+}
+
+.gate-header h2 {
+    color: var(--color-text-primary);
+
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.gate-header p {
+    margin-top: 4px;
+
+    color: var(--color-text-muted);
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.gate-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    padding: 18px 24px;
+
+    overflow-y: auto;
+}
+
+.gate-document {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    padding: 14px 16px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.gate-document-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.gate-document-head div {
+    display: flex;
+    flex-direction: column;
+}
+
+.gate-document-head strong {
+    color: var(--color-text-primary);
+
+    font-size: 14px;
+}
+
+.gate-document-head span {
+    color: var(--color-text-muted);
+
+    font-size: 11px;
+}
+
+.gate-read {
+    flex-shrink: 0;
+
+    padding: 6px 10px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    background: transparent;
+    color: var(--color-primary);
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.gate-read:hover {
+    background: var(--color-primary-light);
+}
+
+.gate-document-content {
+    max-height: 280px;
+    padding: 12px 14px;
+
+    overflow-y: auto;
+
+    border-radius: var(--radius-md);
+
+    background: var(--color-surface-hover);
+}
+
+.gate-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    color: var(--color-text-primary);
+
+    font-size: 13px;
+    line-height: 1.5;
+
+    cursor: pointer;
+}
+
+.gate-check input {
+    width: 17px;
+    height: 17px;
+    margin-top: 2px;
+    flex-shrink: 0;
+
+    accent-color: var(--color-primary);
+}
+
+.gate-error {
+    color: var(--color-danger);
+
+    font-size: 13px;
+}
+
+.gate-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    padding: 14px 24px;
+
+    border-top: 1px solid var(--color-border);
+}
+
+.gate-btn {
+    min-height: 40px;
+    padding: 0 16px;
+
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.gate-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.gate-btn-primary {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.gate-btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+}
+
+.gate-btn-ghost {
+    border-color: var(--color-border);
+
+    background: transparent;
+    color: var(--color-text-secondary);
+}
+
+.gate-btn-ghost:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+}
+
+@media (max-width: 480px) {
+    .gate-header,
+    .gate-body,
+    .gate-actions {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .gate-document-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .gate-actions {
+        flex-direction: column-reverse;
+    }
+
+    .gate-btn {
+        width: 100%;
+    }
+}

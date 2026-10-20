@@ -78,6 +78,13 @@ export const useAuthStore = defineStore(
             }
         }
 
+        // Registra la aceptación de los documentos legales pendientes (Ley 1581 de 2012).
+        async function acceptLegal(documents) {
+            const response = await api.post('/legal/accept', { documents })
+
+            user.value = response.data.data
+        }
+
         async function fetchUser() {
             try {
                 const response = await api.get('/auth/me')
@@ -108,6 +115,7 @@ export const useAuthStore = defineStore(
             logout,
             fetchUser,
             completeOnboarding,
+            acceptLegal,
         }
     }
 )

@@ -241,7 +241,10 @@ let autoStarted = false
 watch(
     () => authStore.user,
     (user) => {
-        if (user && !user.onboarding_completed && !autoStarted) {
+        // Primero la aceptación legal; el recorrido arranca cuando ya no hay pendientes.
+        const legalPending = (user?.legal?.pending?.length ?? 0) > 0
+
+        if (user && !user.onboarding_completed && !legalPending && !autoStarted) {
             autoStarted = true
 
             // Espera a que el layout termine de pintarse para medir bien la barra lateral.

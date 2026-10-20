@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Modules\Auth\Controllers\AuthController;
+use App\Modules\Auth\Controllers\GoogleAuthController;
 
 Route::prefix('auth')->group(function () {
 
@@ -9,6 +10,11 @@ Route::prefix('auth')->group(function () {
         AuthController::class,
         'register',
     ])->middleware('throttle:register');
+
+    Route::get('/providers', [
+        GoogleAuthController::class,
+        'providers',
+    ]);
 
     Route::post('/login', [
         AuthController::class,

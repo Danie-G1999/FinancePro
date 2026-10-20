@@ -706,6 +706,74 @@
     white-space: nowrap;
 }
 
+.search-row {
+    display: flex;
+    gap: 8px;
+}
+
+.filters-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    flex-shrink: 0;
+    min-height: 40px;
+    padding: 0 12px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.filters-toggle.active {
+    border-color: var(--color-primary);
+
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.filters-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+
+    border-radius: 999px;
+
+    background: var(--color-primary);
+    color: #fff;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Con los filtros ocultos queda una tarjeta compacta: solo el buscador. */
+.filters-collapsed {
+    padding-block: 12px;
+}
+
+.filters-collapsed .filter-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
 .filter-error {
     grid-column: 1 / -1;
 

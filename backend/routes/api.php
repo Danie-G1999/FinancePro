@@ -18,4 +18,5 @@ require base_path('app/Modules/Profile/Routes/api.php');
 require base_path('app/Modules/Goals/Routes/api.php');
 require base_path('app/Modules/Budgets/Routes/api.php');
 require base_path('app/Modules/Categories/Routes/api.php');
+require base_path('app/Modules/Legal/Routes/api.php');
 require base_path('app/Modules/Reports/Routes/api.php');

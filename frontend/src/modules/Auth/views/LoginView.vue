@@ -1,6 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
+import api from '../../../api/axios'
 
 import LoginForm from '../components/LoginForm.vue'
 import RegisterForm from '../components/RegisterForm.vue'
@@ -23,6 +25,33 @@ function switchForm(currentEmail) {
 function goToDashboard() {
     router.push({ name: 'dashboard' })
 }
+
+const googleEnabled = ref(false)
+
+// Errores con los que el backend devuelve al usuario desde Google (?error=...).
+const GOOGLE_ERRORS = {
+    google_cancelled: 'Cancelaste el inicio de sesión con Google.',
+    google_failed: 'No fue posible iniciar sesión con Google. Inténtalo de nuevo.',
+    google_email_unverified: 'Tu correo de Google no está verificado. Verifícalo en Google o regístrate con correo y contraseña.',
+    google_unavailable: 'El inicio de sesión con Google no está disponible en este momento.',
+}
+
+const googleError = ref(GOOGLE_ERRORS[route.query.error] ?? '')
+
+onMounted(async () => {
+    // Limpia ?error de la URL para que el aviso no reaparezca al recargar.
+    if (route.query.error) {
+        router.replace({ name: route.name })
+    }
+
+    try {
+        const response = await api.get('/auth/providers')
+
+        googleEnabled.value = Boolean(response.data.data?.google)
+    } catch {
+        googleEnabled.value = false
+    }
+})
 </script>
 
 <template>
@@ -37,6 +66,14 @@ function goToDashboard() {
                 </div>
             </div>
 
+            <div
+                v-if="googleError"
+                class="google-error"
+                role="alert"
+            >
+                {{ googleError }}
+            </div>
+
             <Transition
                 name="auth-swap"
                 mode="out-in"
@@ -45,6 +82,7 @@ function goToDashboard() {
                     v-if="isRegister"
                     key="register"
                     :initial-email="email"
+                    :google-enabled="googleEnabled"
                     @switch="switchForm"
                     @success="goToDashboard"
                 />
@@ -53,6 +91,7 @@ function goToDashboard() {
                     v-else
                     key="login"
                     :initial-email="email"
+                    :google-enabled="googleEnabled"
                     @switch="switchForm"
                     @success="goToDashboard"
                 />
@@ -110,6 +149,16 @@ function goToDashboard() {
 .brand div span {
     font-size: 11px;
     color: var(--color-text-muted);
+}
+
+.google-error {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-danger);
+    border-radius: var(--radius-md);
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    font-size: 13px;
 }
 
 .auth-swap-enter-active,

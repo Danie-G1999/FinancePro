@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Income\Http\Middleware\GenerateRecurringIncomes;
+use App\Modules\Legal\Http\Middleware\EnsureLegalAccepted;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
 
-        $middleware->api(append: [GenerateRecurringIncomes::class]);
+        // Primero la autorización de datos: sin ella no se procesa nada del usuario.
+        $middleware->api(append: [EnsureLegalAccepted::class, GenerateRecurringIncomes::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

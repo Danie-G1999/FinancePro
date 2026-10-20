@@ -1,6 +1,8 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 
+import GoogleButton from './GoogleButton.vue'
+import LegalModal from '../../Legal/components/LegalModal.vue'
 import { useAuthStore } from '../stores/authStore'
 import { fieldErrors, useLockout } from '../composables/useLockout'
 
@@ -8,6 +10,12 @@ const props = defineProps({
     initialEmail: {
         type: String,
         default: '',
+    },
+
+    // Solo se muestra si el backend tiene credenciales de Google configuradas.
+    googleEnabled: {
+        type: Boolean,
+        default: false,
     },
 })
 
@@ -22,7 +30,16 @@ const form = reactive({
     email: props.initialEmail,
     password: '',
     password_confirmation: '',
+    // La ley exige autorización expresa: las casillas nunca vienen marcadas.
+    accept_terms: false,
+    accept_privacy: false,
 })
+
+const openDocument = ref(null)
+
+function acceptFromModal(document) {
+    form[document === 'terms' ? 'accept_terms' : 'accept_privacy'] = true
+}
 
 const showPassword = ref(false)
 const errorMessage = ref('')
@@ -58,6 +75,14 @@ function validate() {
         errors.value.password_confirmation = 'Las contraseñas no coinciden.'
     }
 
+    if (!form.accept_terms) {
+        errors.value.accept_terms = 'Debes aceptar los Términos y Condiciones.'
+    }
+
+    if (!form.accept_privacy) {
+        errors.value.accept_privacy = 'Debes autorizar el tratamiento de tus datos personales.'
+    }
+
     return Object.keys(errors.value).length === 0
 }
 
@@ -74,6 +99,8 @@ async function submit() {
             email: form.email.trim(),
             password: form.password,
             password_confirmation: form.password_confirmation,
+            accept_terms: form.accept_terms,
+            accept_privacy: form.accept_privacy,
         })
 
         emit('success')
@@ -102,6 +129,14 @@ async function submit() {
             <h1>Crear cuenta</h1>
             <p>Tus cuentas y movimientos son privados: solo tú los ves.</p>
         </header>
+
+        <template v-if="googleEnabled">
+            <GoogleButton label="Registrarme con Google" />
+
+            <div class="auth-divider">
+                <span>o con tu correo</span>
+            </div>
+        </template>
 
         <div class="field">
             <label for="register-name">Nombre</label>
@@ -194,6 +229,49 @@ async function submit() {
             </span>
         </div>
 
+        <div class="legal-checks">
+            <label class="legal-check">
+                <input
+                    v-model="form.accept_terms"
+                    type="checkbox"
+                />
+
+                <span>
+                    He leído y acepto los
+                    <button
+                        type="button"
+                        class="link-btn"
+                        @click.prevent="openDocument = 'terms'"
+                    >
+                        Términos y Condiciones
+                    </button>.
+                </span>
+            </label>
+
+            <span v-if="errors.accept_terms" class="field-error">{{ errors.accept_terms }}</span>
+
+            <label class="legal-check">
+                <input
+                    v-model="form.accept_privacy"
+                    type="checkbox"
+                />
+
+                <span>
+                    Autorizo el tratamiento de mis datos personales conforme a la
+                    <button
+                        type="button"
+                        class="link-btn"
+                        @click.prevent="openDocument = 'privacy'"
+                    >
+                        Política de Tratamiento de Datos
+                    </button>
+                    (Ley 1581 de 2012).
+                </span>
+            </label>
+
+            <span v-if="errors.accept_privacy" class="field-error">{{ errors.accept_privacy }}</span>
+        </div>
+
         <div
             v-if="errorMessage"
             class="auth-alert"
@@ -227,6 +305,13 @@ async function submit() {
                 Inicia sesión
             </button>
         </p>
+        <LegalModal
+            v-if="openDocument"
+            :document="openDocument"
+            acceptable
+            @accept="acceptFromModal"
+            @close="openDocument = null"
+        />
     </form>
 </template>
 

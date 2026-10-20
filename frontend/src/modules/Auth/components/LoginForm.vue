@@ -1,6 +1,8 @@
 <script setup>
 import { reactive, ref } from 'vue'
 
+import GoogleButton from './GoogleButton.vue'
+import LegalModal from '../../Legal/components/LegalModal.vue'
 import { useAuthStore } from '../stores/authStore'
 import { fieldErrors, useLockout } from '../composables/useLockout'
 
@@ -8,6 +10,12 @@ const props = defineProps({
     initialEmail: {
         type: String,
         default: '',
+    },
+
+    // Solo se muestra si el backend tiene credenciales de Google configuradas.
+    googleEnabled: {
+        type: Boolean,
+        default: false,
     },
 })
 
@@ -24,6 +32,8 @@ const form = reactive({
 })
 
 const showPassword = ref(false)
+
+const openDocument = ref(null)
 const errorMessage = ref('')
 const errors = ref({})
 
@@ -71,6 +81,14 @@ async function submit() {
             <h1>Iniciar sesión</h1>
             <p>Ingresa para ver tus cuentas y finanzas.</p>
         </header>
+
+        <template v-if="googleEnabled">
+            <GoogleButton label="Continuar con Google" />
+
+            <div class="auth-divider">
+                <span>o con tu correo</span>
+            </div>
+        </template>
 
         <div class="field">
             <label for="login-email">Correo</label>
@@ -158,6 +176,30 @@ async function submit() {
                 Regístrate
             </button>
         </p>
+        <p class="legal-links">
+            Consulta nuestros
+            <button
+                type="button"
+                class="link-btn"
+                @click="openDocument = 'terms'"
+            >
+                Términos y Condiciones
+            </button>
+            y la
+            <button
+                type="button"
+                class="link-btn"
+                @click="openDocument = 'privacy'"
+            >
+                Política de Tratamiento de Datos
+            </button>.
+        </p>
+
+        <LegalModal
+            v-if="openDocument"
+            :document="openDocument"
+            @close="openDocument = null"
+        />
     </form>
 </template>
 

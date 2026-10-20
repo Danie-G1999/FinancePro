@@ -2,6 +2,7 @@
 
 namespace App\Modules\Auth\Resources;
 
+use App\Modules\Legal\Services\LegalService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,6 +17,8 @@ class UserResource extends JsonResource
             'photo_url' => $this->profile?->photoUrl(),
             'email_verified_at' => $this->email_verified_at,
             'onboarding_completed' => $this->onboarding_completed_at !== null,
+            'google_linked' => $this->google_id !== null,
+            'legal' => app(LegalService::class)->statusFor($this->resource),
             'created_at' => $this->created_at,
         ];
     }

@@ -45,6 +45,11 @@ class RegisterRequest extends FormRequest
                 'confirmed',
                 Password::min(8)->letters()->numbers(),
             ],
+
+            // Autorización previa, expresa e informada (Ley 1581 de 2012, art. 9).
+            'accept_terms' => ['accepted'],
+
+            'accept_privacy' => ['accepted'],
         ];
     }
 
@@ -63,6 +68,8 @@ class RegisterRequest extends FormRequest
             'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
             'password.letters' => 'La contraseña debe incluir al menos una letra.',
             'password.numbers' => 'La contraseña debe incluir al menos un número.',
+            'accept_terms.accepted' => 'Debes aceptar los Términos y Condiciones.',
+            'accept_privacy.accepted' => 'Debes autorizar el tratamiento de tus datos personales.',
         ];
     }
 }

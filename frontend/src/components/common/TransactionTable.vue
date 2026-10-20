@@ -87,9 +87,11 @@ function formatDate(value) {
                 </thead>
 
                 <tbody>
+                    <!-- En Movimientos se mezclan ingresos y gastos, que pueden compartir id:
+                         la clave incluye el tipo para que Vue no confunda filas. -->
                     <tr
                         v-for="item in items"
-                        :key="item.id"
+                        :key="`${item.type ?? variant}-${item.id}`"
                     >
                         <td class="nowrap cell-date">
                             {{ formatDate(item[dateKey]) }}

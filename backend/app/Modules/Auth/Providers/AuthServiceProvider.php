@@ -29,6 +29,8 @@ class AuthServiceProvider extends ServiceProvider
             __DIR__ . '/../database/migrations'
         );
 
+        $this->loadRoutesFrom(__DIR__ . '/../Routes/web.php');
+
         // Por correo + IP frena la adivinación de contraseñas de una cuenta;
         // el límite por IP frena a quien prueba muchos correos distintos.
         RateLimiter::for('login', fn (Request $request) => [
@@ -40,6 +42,10 @@ class AuthServiceProvider extends ServiceProvider
                 ->by('ip:' . $request->ip())
                 ->response(fn (Request $request, array $headers) => $this->tooManyAttempts($headers)),
         ]);
+
+        // Ida y vuelta a Google: holgado para uso normal, frena abusos del callback.
+        RateLimiter::for('oauth', fn (Request $request) => Limit::perMinute(self::LOGIN_ATTEMPTS_PER_MINUTE * 4)
+            ->by('oauth:' . $request->ip()));
 
         RateLimiter::for('register', fn (Request $request) => Limit::perHour(self::REGISTER_ATTEMPTS_PER_HOUR)
             ->by($request->ip())

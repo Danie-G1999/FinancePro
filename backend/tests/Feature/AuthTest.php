@@ -29,6 +29,8 @@ class AuthTest extends TestCase
             'email' => 'Ana@Correo.com',
             'password' => 'secreta123',
             'password_confirmation' => 'secreta123',
+            'accept_terms' => true,
+            'accept_privacy' => true,
         ], $overrides);
     }
 

@@ -8,6 +8,7 @@ use App\Modules\Auth\Requests\LoginRequest;
 use App\Modules\Auth\Requests\RegisterRequest;
 use App\Modules\Auth\Resources\UserResource;
 use App\Modules\Auth\Services\AuthService;
+use App\Modules\Legal\Services\LegalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -15,7 +16,8 @@ use Illuminate\Http\Request;
 class AuthController
 {
     public function __construct(
-        protected AuthService $authService
+        protected AuthService $authService,
+        protected LegalService $legal
     ) {
     }
 
@@ -28,6 +30,8 @@ class AuthController
         );
 
         $user = $this->authService->register($dto);
+
+        $this->legal->accept($user, ['terms', 'privacy'], $request);
 
         // Queda con la sesión iniciada para entrar directo a su panel.
         Auth::guard('web')->login($user);

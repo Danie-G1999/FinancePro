@@ -5,6 +5,7 @@ import TransactionDetailModal from '../components/TransactionDetailModal.vue'
 import TransactionTable from '../../../components/common/TransactionTable.vue'
 import { useTransactionStore } from '../stores/transactionStore'
 import { useAccountStore } from '../../Accounts/stores/accountStore'
+import { useLayoutStore } from '../../../components/layout/layoutStore'
 import { showError } from '../../../utils/alerts'
 
 const FILTER_DEBOUNCE_MS = 350
@@ -12,6 +13,21 @@ const FILTER_DEBOUNCE_MS = 350
 const transactionStore = useTransactionStore()
 
 const accountStore = useAccountStore()
+
+const layout = useLayoutStore()
+
+// En móvil solo queda visible el buscador; el resto de filtros se abre con un botón
+// para que la lista de movimientos ocupe la pantalla.
+const filtersOpen = ref(false)
+
+const showExtraFilters = computed(() => !layout.isMobile || filtersOpen.value)
+
+// Filtros aplicados fuera del buscador: se cuentan en el botón aunque estén ocultos.
+const hiddenFiltersCount = computed(() =>
+    ['account_id', 'date_from', 'date_to'].filter(
+        (key) => transactionStore.filters[key] !== ''
+    ).length
+)
 
 const selectedTransaction = ref(null)
 
@@ -81,24 +97,59 @@ onBeforeUnmount(() => clearTimeout(debounceTimer))
 
         <!-- FILTERS -->
 
-        <section class="filters-card">
+        <section
+            class="filters-card"
+            :class="{ 'filters-collapsed': !showExtraFilters }"
+        >
 
             <div class="filter-group filter-search">
                 <label for="filter-search" class="filter-label">
                     Buscar
                 </label>
 
-                <input
-                    id="filter-search"
-                    v-model="transactionStore.filters.search"
-                    type="search"
-                    class="filter-input"
-                    placeholder="Buscar por descripción..."
-                    maxlength="100"
-                />
+                <div class="search-row">
+                    <input
+                        id="filter-search"
+                        v-model="transactionStore.filters.search"
+                        type="search"
+                        class="filter-input"
+                        placeholder="Buscar por descripción..."
+                        maxlength="100"
+                    />
+
+                    <button
+                        v-if="layout.isMobile"
+                        type="button"
+                        class="filters-toggle"
+                        :class="{ active: filtersOpen || hiddenFiltersCount > 0 }"
+                        aria-controls="extra-filters"
+                        :aria-expanded="filtersOpen"
+                        @click="filtersOpen = !filtersOpen"
+                    >
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 6h16" />
+                            <path d="M7 12h10" />
+                            <path d="M10 18h4" />
+                        </svg>
+
+                        <span>Filtros</span>
+
+                        <span
+                            v-if="hiddenFiltersCount > 0"
+                            class="filters-badge"
+                            :aria-label="`${hiddenFiltersCount} filtros activos`"
+                        >
+                            {{ hiddenFiltersCount }}
+                        </span>
+                    </button>
+                </div>
             </div>
 
-            <div class="filter-group">
+            <div
+                v-show="showExtraFilters"
+                id="extra-filters"
+                class="filter-group"
+            >
                 <label for="filter-account" class="filter-label">
                     Cuenta
                 </label>
@@ -122,7 +173,10 @@ onBeforeUnmount(() => clearTimeout(debounceTimer))
                 </select>
             </div>
 
-            <div class="filter-group">
+            <div
+                v-show="showExtraFilters"
+                class="filter-group"
+            >
                 <label for="filter-from" class="filter-label">
                     Desde
                 </label>
@@ -136,7 +190,10 @@ onBeforeUnmount(() => clearTimeout(debounceTimer))
                 />
             </div>
 
-            <div class="filter-group">
+            <div
+                v-show="showExtraFilters"
+                class="filter-group"
+            >
                 <label for="filter-to" class="filter-label">
                     Hasta
                 </label>
@@ -152,6 +209,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimer))
 
             <button
                 v-if="transactionStore.hasFilters()"
+                v-show="showExtraFilters"
                 type="button"
                 class="btn btn-secondary filter-clear"
                 @click="clearFilters"
