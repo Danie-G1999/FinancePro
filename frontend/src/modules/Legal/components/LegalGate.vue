@@ -1,13 +1,10 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-
 import { useAuthStore } from '../../Auth/stores/authStore'
 import { LEGAL_DOCUMENTS } from '../utils/legalDocuments'
 import PrivacyContent from './PrivacyContent.vue'
 import TermsContent from './TermsContent.vue'
 
-const router = useRouter()
 const authStore = useAuthStore()
 
 const CONTENT = { terms: TermsContent, privacy: PrivacyContent }
@@ -56,9 +53,7 @@ async function accept() {
 }
 
 async function logout() {
-    await authStore.logout()
-
-    window.location.replace(router.resolve({ name: 'login' }).href)
+    await authStore.logoutAndRedirect()
 }
 </script>
 

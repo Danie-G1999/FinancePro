@@ -166,12 +166,17 @@ router.beforeEach(async (to) => {
         await authStore.fetchUser()
     }
 
+    // Toda ruta dentro del layout (incluida "/", que lleva al dashboard) exige sesión.
     if (
         to.meta.requiresAuth &&
         !authStore.isAuthenticated
     ) {
+        // Recuerda a dónde iba para volver ahí después de iniciar sesión.
+        const wantsSpecificPage = to.name && to.name !== 'dashboard'
+
         return {
             name: 'login',
+            query: wantsSpecificPage ? { redirect: to.fullPath } : {},
         }
     }
 

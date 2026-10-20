@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import api from '../../../api/axios'
+import { safeRedirect } from '../../../utils/safeRedirect'
+import { useAuthStore } from '../stores/authStore'
 
 import LoginForm from '../components/LoginForm.vue'
 import RegisterForm from '../components/RegisterForm.vue'
@@ -22,9 +24,14 @@ function switchForm(currentEmail) {
     router.replace({ name: isRegister.value ? 'login' : 'register' })
 }
 
+const authStore = useAuthStore()
+
+// Tras iniciar sesión vuelve a la página que pidió, si era una ruta interna válida.
 function goToDashboard() {
-    router.push({ name: 'dashboard' })
+    router.push(safeRedirect(route.query.redirect) ?? { name: 'dashboard' })
 }
+
+const sessionExpired = ref(route.query.expired === '1')
 
 const googleEnabled = ref(false)
 
@@ -39,9 +46,11 @@ const GOOGLE_ERRORS = {
 const googleError = ref(GOOGLE_ERRORS[route.query.error] ?? '')
 
 onMounted(async () => {
-    // Limpia ?error de la URL para que el aviso no reaparezca al recargar.
-    if (route.query.error) {
-        router.replace({ name: route.name })
+    // Limpia los avisos de la URL para que no reaparezcan al recargar (conserva ?redirect).
+    if (route.query.error || route.query.expired) {
+        const { error, expired, ...rest } = route.query
+
+        router.replace({ name: route.name, query: rest })
     }
 
     try {
@@ -64,6 +73,22 @@ onMounted(async () => {
                     <strong>FinancePro</strong>
                     <span>Finanzas personales</span>
                 </div>
+            </div>
+
+            <div
+                v-if="authStore.connectionError"
+                class="google-error"
+                role="alert"
+            >
+                No pudimos conectar con el servidor. Revisa tu conexión o inténtalo en unos minutos.
+            </div>
+
+            <div
+                v-else-if="sessionExpired"
+                class="session-notice"
+                role="status"
+            >
+                Tu sesión expiró. Inicia sesión de nuevo para continuar.
             </div>
 
             <div
@@ -158,6 +183,16 @@ onMounted(async () => {
     border-radius: var(--radius-md);
     background: var(--color-danger-light);
     color: var(--color-danger);
+    font-size: 13px;
+}
+
+.session-notice {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-md);
+    background: var(--color-warning-light);
+    color: var(--color-text-primary);
     font-size: 13px;
 }
 

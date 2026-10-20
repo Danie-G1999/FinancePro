@@ -124,11 +124,7 @@ const goToSettings = () => {
 const logout = async () => {
     closeUserMenu()
 
-    await authStore.logout()
-
-    // Recarga completa: borra de memoria los datos del usuario que cerró sesión
-    // para que quien entre después en esta pestaña no los vea.
-    window.location.replace(router.resolve({ name: 'login' }).href)
+    await authStore.logoutAndRedirect()
 }
 
 const handleClickOutside = (event) => {

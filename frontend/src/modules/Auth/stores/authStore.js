@@ -11,6 +11,9 @@ export const useAuthStore = defineStore(
         const loading = ref(false)
         const initialized = ref(false)
 
+        // true si no se pudo hablar con el backend (red, CORS, servidor caído).
+        const connectionError = ref(false)
+
         const isAuthenticated = computed(() => {
             return user.value !== null
         })
@@ -85,34 +88,58 @@ export const useAuthStore = defineStore(
             user.value = response.data.data
         }
 
+        // Nunca lanza: ante cualquier fallo el usuario queda como invitado y el
+        // guardián de rutas lo manda al login (antes un error de red dejaba la app en blanco).
         async function fetchUser() {
             try {
                 const response = await api.get('/auth/me')
 
                 user.value = response.data.data
+                connectionError.value = false
 
                 return user.value
             } catch (error) {
-                if (error.response?.status === 401) {
-                    user.value = null
+                user.value = null
 
-                    return null
-                }
+                // Sin respuesta (red/CORS) o error del servidor: no es "sin sesión", es que no hay conexión.
+                connectionError.value = !error.response || error.response.status >= 500
 
-                throw error
+                return null
             } finally {
                 initialized.value = true
             }
+        }
+
+        // Sesión vencida o cerrada en el servidor mientras la app estaba abierta.
+        function clearSession() {
+            user.value = null
+        }
+
+        // Cierra la sesión y recarga en /login: borra de memoria todos los datos del
+        // usuario (stores de Pinia) y cualquier dato de la app en el navegador.
+        async function logoutAndRedirect() {
+            await logout()
+
+            try {
+                sessionStorage.clear()
+            } catch {
+                // Navegación privada o almacenamiento bloqueado: no hay nada que limpiar.
+            }
+
+            window.location.replace('/login')
         }
 
         return {
             user,
             loading,
             initialized,
+            connectionError,
             isAuthenticated,
             login,
             register,
             logout,
+            logoutAndRedirect,
+            clearSession,
             fetchUser,
             completeOnboarding,
             acceptLegal,
