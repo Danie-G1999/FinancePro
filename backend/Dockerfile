@@ -17,6 +17,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+# archivo de despliegue
 # Primero solo las dependencias: esta capa se reutiliza mientras composer.lock no cambie.
 COPY composer.json composer.lock ./
 RUN composer install \
