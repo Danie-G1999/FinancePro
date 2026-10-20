@@ -97,6 +97,11 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Pooler de Supabase en modo transacción (puerto 6543): no admite sentencias
+            // preparadas en el servidor; PDO las prepara en PHP (escapando igual los valores).
+            'options' => extension_loaded('pdo_pgsql') ? [
+                PDO::ATTR_EMULATE_PREPARES => filter_var(env('DB_EMULATE_PREPARES', false), FILTER_VALIDATE_BOOL),
+            ] : [],
         ],
 
         'sqlsrv' => [
