@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 
+import ChangePasswordForm from '../components/ChangePasswordForm.vue'
 import ProfileForm from '../components/ProfileForm.vue'
 import ProfilePhotoCard from '../components/ProfilePhotoCard.vue'
 import { useProfileStore } from '../stores/profileStore'
@@ -137,6 +138,8 @@ onMounted(() => {
                 @invalid="showError($event, 'Foto no válida')"
             />
 
+            <div class="profile-main">
+
             <section class="form-card">
 
                 <div class="form-card-header">
@@ -158,6 +161,24 @@ onMounted(() => {
                 </div>
 
             </section>
+
+            <section class="form-card">
+
+                <div class="form-card-header">
+                    <h2>{{ authStore.user?.has_password === false ? 'Crear contraseña' : 'Contraseña' }}</h2>
+
+                    <p>
+                        Cámbiala si crees que alguien más la conoce o cada cierto tiempo.
+                    </p>
+                </div>
+
+                <div class="form-card-body">
+                    <ChangePasswordForm />
+                </div>
+
+            </section>
+
+            </div>
 
         </div>
 

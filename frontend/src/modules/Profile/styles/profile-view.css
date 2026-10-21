@@ -44,6 +44,15 @@
    FORM CARD
    ========================================================= */
 
+/* Columna derecha: datos del perfil y, debajo, la contraseña. */
+.profile-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    min-width: 0;
+}
+
 .form-card {
     background: var(--color-surface);
 

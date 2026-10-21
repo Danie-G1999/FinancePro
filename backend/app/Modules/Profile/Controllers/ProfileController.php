@@ -3,6 +3,7 @@
 namespace App\Modules\Profile\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Profile\Requests\UpdatePasswordRequest;
 use App\Modules\Profile\Requests\UpdateProfileRequest;
 use App\Modules\Profile\Requests\UploadPhotoRequest;
 use App\Modules\Profile\Resources\ProfileResource;
@@ -33,6 +34,28 @@ class ProfileController extends Controller
         return response()->json([
             'message' => 'Perfil actualizado correctamente.',
             'data' => new ProfileResource($profile),
+        ]);
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        $created = ! $request->hasPassword();
+
+        $this->service->updatePassword(
+            $request->user(),
+            $request->validated('password'),
+            $request->hasSession() ? $request->session()->getId() : null
+        );
+
+        // Nuevo identificador de sesión tras un cambio de credenciales.
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
+        return response()->json([
+            'message' => $created
+                ? 'Contraseña creada. Ahora también puedes entrar con tu correo y contraseña.'
+                : 'Contraseña actualizada. Cerramos tus otras sesiones abiertas.',
         ]);
     }
 

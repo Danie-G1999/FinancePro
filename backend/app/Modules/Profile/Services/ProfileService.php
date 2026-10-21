@@ -9,6 +9,7 @@ use App\Modules\Profile\Models\Profile;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProfileService
 {
@@ -122,6 +123,26 @@ class ProfileService
     {
         if ($path) {
             Storage::disk(self::PHOTO_DISK)->delete($path);
+        }
+    }
+
+    /**
+     * Cambia (o crea, en cuentas de Google) la contraseña y cierra las demás sesiones:
+     * si alguien más la conocía, pierde el acceso. La sesión actual sigue abierta.
+     */
+    public function updatePassword(User $user, string $password, ?string $currentSessionId): void
+    {
+        $user->forceFill([
+            'password' => $password,
+            // Invalida las cookies de "Recordarme" de otros equipos.
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        if (config('session.driver') === 'database') {
+            DB::table(config('session.table', 'sessions'))
+                ->where('user_id', $user->getKey())
+                ->when($currentSessionId, fn ($query, $id) => $query->where('id', '!=', $id))
+                ->delete();
         }
     }
 }
