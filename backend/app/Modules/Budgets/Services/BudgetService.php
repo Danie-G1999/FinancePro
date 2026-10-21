@@ -5,19 +5,19 @@ namespace App\Modules\Budgets\Services;
 use App\Modules\Accounts\Interfaces\AccountRepositoryInterface;
 use App\Modules\Budgets\Enums\BudgetType;
 use App\Modules\Budgets\Enums\CostType;
+use App\Modules\Settings\Services\UserSettingsService;
 use App\Modules\Budgets\Interfaces\BudgetRepositoryInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 class BudgetService
 {
-    private const DEFAULT_CURRENCY = 'COP';
-
     private const WARNING_THRESHOLD = 80;
 
     public function __construct(
         private BudgetRepositoryInterface $repository,
-        private AccountRepositoryInterface $accounts
+        private AccountRepositoryInterface $accounts,
+        private UserSettingsService $settings
     ) {}
 
     /** Ingresos, fórmula básica y regla 50/30/20 del mes indicado (YYYY-MM). */
@@ -29,7 +29,12 @@ class BudgetService
 
         $budget = $this->repository->findByUserAndPeriod($userId, $period);
 
-        $currency = $budget?->currency ?? $this->dominantCurrency($userId);
+        $currency = $budget?->currency ?? $this->settings->summaryCurrency(
+            $userId,
+            $this->accounts->getByUser($userId)->where('is_active', true)
+        );
+
+        $percents = $this->settings->budgetPercents($userId);
 
         $registered = $this->repository->sumIncome($userId, $currency, $from, $to);
         $planned = $budget ? (float) $budget->net_income : null;
@@ -57,7 +62,7 @@ class BudgetService
             ],
             'rule' => collect(BudgetType::cases())
                 ->mapWithKeys(fn (BudgetType $type) => [
-                    $type->value => $this->buildBlock($type, $income, $totals),
+                    $type->value => $this->buildBlock($type, $percents[$type->value], $income, $totals),
                 ])
                 ->all(),
         ];
@@ -77,15 +82,15 @@ class BudgetService
         return $this->getOverview($userId, $period);
     }
 
-    private function buildBlock(BudgetType $type, float $income, Collection $totals): array
+    private function buildBlock(BudgetType $type, int $percent, float $income, Collection $totals): array
     {
-        $limit = round($income * $type->percent() / 100, 2);
+        $limit = round($income * $percent / 100, 2);
         $spent = round($this->sumWhere($totals, 'budget_type', $type->value), 2);
         $usage = $limit > 0 ? round($spent / $limit * 100, 1) : null;
 
         return [
             'label' => $type->label(),
-            'percent' => $type->percent(),
+            'percent' => $percent,
             'limit' => $limit,
             'spent' => $spent,
             'remaining' => round($limit - $spent, 2),
@@ -104,15 +109,4 @@ class BudgetService
         return (float) $totals->where($column, $value)->sum('total');
     }
 
-    /** Moneda con más cuentas activas del usuario. */
-    private function dominantCurrency(int $userId): string
-    {
-        return $this->accounts
-            ->getByUser($userId)
-            ->where('is_active', true)
-            ->countBy('currency')
-            ->sortDesc()
-            ->keys()
-            ->first() ?? self::DEFAULT_CURRENCY;
-    }
 }

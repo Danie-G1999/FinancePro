@@ -2,6 +2,7 @@
 
 use App\Modules\Income\Http\Middleware\GenerateRecurringIncomes;
 use App\Modules\Legal\Http\Middleware\EnsureLegalAccepted;
+use App\Modules\Settings\Http\Middleware\EnforceInactivityTimeout;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,8 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->statefulApi();
 
-        // Primero la autorización de datos: sin ella no se procesa nada del usuario.
-        $middleware->api(append: [EnsureLegalAccepted::class, GenerateRecurringIncomes::class]);
+        // 1) sesión vencida por inactividad, 2) autorización de datos, 3) ingresos recurrentes.
+        $middleware->api(append: [
+            EnforceInactivityTimeout::class,
+            EnsureLegalAccepted::class,
+            GenerateRecurringIncomes::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -3,6 +3,7 @@
 namespace App\Modules\Dashboard\Services;
 
 use App\Modules\Dashboard\Interfaces\DashboardRepositoryInterface;
+use App\Modules\Settings\Services\UserSettingsService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -12,10 +13,9 @@ class DashboardService
 
     private const RECENT_MOVEMENTS = 8;
 
-    private const DEFAULT_CURRENCY = 'COP';
-
     public function __construct(
-        private DashboardRepositoryInterface $repository
+        private DashboardRepositoryInterface $repository,
+        private UserSettingsService $settings
     ) {}
 
     public function getSummary(int $userId): array
@@ -23,8 +23,8 @@ class DashboardService
         $accounts = $this->repository->getActiveAccounts($userId);
         $debts = $this->repository->getDebts($userId);
 
-        // Los totales se expresan en la moneda con más cuentas activas.
-        $currency = $this->resolveCurrency($accounts);
+        // Totales en la moneda preferida del usuario (o la de la mayoría de sus cuentas).
+        $currency = $this->settings->summaryCurrency($userId, $accounts);
 
         $today = CarbonImmutable::today();
         $firstMonth = $today->startOfMonth()->subMonths(self::MONTHS_IN_CHART - 1);
@@ -71,14 +71,6 @@ class DashboardService
         ];
     }
 
-    private function resolveCurrency(Collection $accounts): string
-    {
-        return $accounts
-            ->countBy('currency')
-            ->sortDesc()
-            ->keys()
-            ->first() ?? self::DEFAULT_CURRENCY;
-    }
 
     private function buildCashFlow(
         CarbonImmutable $firstMonth,

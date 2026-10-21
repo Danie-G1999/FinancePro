@@ -9,13 +9,12 @@ use App\Modules\Budgets\Interfaces\BudgetRepositoryInterface;
 use App\Modules\Debts\Interfaces\DebtRepositoryInterface;
 use App\Modules\Goals\Interfaces\GoalRepositoryInterface;
 use App\Modules\Reports\Interfaces\ReportRepositoryInterface;
+use App\Modules\Settings\Services\UserSettingsService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 class ReportService
 {
-    private const DEFAULT_CURRENCY = 'COP';
-
     private const TOP_EXPENSES = 5;
 
     public function __construct(
@@ -24,7 +23,8 @@ class ReportService
         private AccountRepositoryInterface $accounts,
         private DebtRepositoryInterface $debts,
         private GoalRepositoryInterface $goals,
-        private InsightBuilder $insights
+        private InsightBuilder $insights,
+        private UserSettingsService $settings
     ) {}
 
     public function getReport(int $userId, string $from, string $to, ?string $currency): array
@@ -34,7 +34,9 @@ class ReportService
 
         $activeAccounts = $this->accounts->getByUser($userId)->where('is_active', true);
         $currencies = $activeAccounts->pluck('currency')->unique()->sort()->values();
-        $currency = $this->resolveCurrency($currency, $activeAccounts, $currencies);
+        $currency = $currency && $currencies->contains($currency)
+            ? $currency
+            : $this->settings->summaryCurrency($userId, $activeAccounts);
 
         $current = $this->periodTotals($userId, $currency, $start, $end);
         $previous = $this->previousTotals($userId, $currency, $start, $end);
@@ -45,7 +47,7 @@ class ReportService
             'currencies' => $currencies->all(),
             'summary' => $this->buildSummary($current, $previous),
             'cash_flow' => $this->buildCashFlow($userId, $currency, $start, $end),
-            'spending' => $this->buildSpending($current),
+            'spending' => $this->buildSpending($current, $this->settings->budgetPercents($userId)),
             'accounts' => $this->buildAccounts($userId, $activeAccounts, $currency, $from, $to),
             'debts' => $this->buildDebts($userId, $currency),
             'goals' => $this->buildGoals($userId, $currency),
@@ -142,14 +144,14 @@ class ReportService
         return $months;
     }
 
-    private function buildSpending(array $current): array
+    private function buildSpending(array $current, array $percents): array
     {
         $rows = $current['rows'];
         $outflow = (float) $rows->sum('total');
         $income = $current['income'];
 
         $categories = collect(BudgetType::cases())
-            ->mapWithKeys(function (BudgetType $type) use ($rows, $outflow, $income) {
+            ->mapWithKeys(function (BudgetType $type) use ($rows, $outflow, $income, $percents) {
                 $amount = (float) $rows->where('budget_type', $type->value)->sum('total');
 
                 return [$type->value => [
@@ -157,7 +159,7 @@ class ReportService
                     'amount' => round($amount, 2),
                     'share' => $outflow > 0 ? round($amount / $outflow * 100, 1) : 0,
                     'income_share' => $income > 0 ? round($amount / $income * 100, 1) : null,
-                    'recommended_percent' => $type->percent(),
+                    'recommended_percent' => $percents[$type->value],
                 ]];
             })
             ->all();
@@ -278,16 +280,4 @@ class ReportService
             ->all();
     }
 
-    private function resolveCurrency(?string $requested, Collection $accounts, Collection $currencies): string
-    {
-        if ($requested && $currencies->contains($requested)) {
-            return $requested;
-        }
-
-        return $accounts
-            ->countBy('currency')
-            ->sortDesc()
-            ->keys()
-            ->first() ?? self::DEFAULT_CURRENCY;
-    }
 }
