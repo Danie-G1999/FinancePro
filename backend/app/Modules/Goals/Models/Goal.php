@@ -59,4 +59,10 @@ class Goal extends Model
         return (int) ($this->contributions_count
             ?? $this->contributions()->count());
     }
+
+    /** Con aportes registrados, cambiar la moneda los dejaría en otra moneda que la meta. */
+    public function currencyLocked(): bool
+    {
+        return $this->contributionsCount() > 0;
+    }
 }

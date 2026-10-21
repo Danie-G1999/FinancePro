@@ -155,19 +155,19 @@ function handleCancel() {
                     id="goal-currency"
                     v-model="form.currency"
                     class="form-input"
-                    :disabled="loading || Boolean(goal)"
+                    :disabled="loading || goal?.currency_locked"
                 >
-<option
-                    v-for="option in CURRENCIES"
-                    :key="option.code"
-                    :value="option.code"
-                >
-                    {{ option.code }} - {{ option.name }}
-                </option>
+                    <option
+                        v-for="option in CURRENCIES"
+                        :key="option.code"
+                        :value="option.code"
+                    >
+                        {{ option.code }} - {{ option.name }}
+                    </option>
                 </select>
 
-                <span v-if="goal" class="form-help">
-                    La moneda no se puede cambiar después de crear la meta.
+                <span v-if="goal?.currency_locked" class="form-help">
+                    La moneda no se puede cambiar porque la meta ya tiene aportes.
                 </span>
             </div>
 

@@ -139,13 +139,13 @@ function handleCancel() {
                     class="form-input"
                     :disabled="loading"
                 >
-<option
-                    v-for="option in CURRENCIES"
-                    :key="option.code"
-                    :value="option.code"
-                >
-                    {{ option.code }} - {{ option.name }}
-                </option>
+                    <option
+                        v-for="option in CURRENCIES"
+                        :key="option.code"
+                        :value="option.code"
+                    >
+                        {{ option.code }} - {{ option.name }}
+                    </option>
                 </select>
 
                 <span class="form-help">

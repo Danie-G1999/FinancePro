@@ -21,6 +21,8 @@ class GoalResource extends JsonResource
 
             'currency' => $this->currency,
 
+            'currency_locked' => $this->currencyLocked(),
+
             'target_date' => $this->target_date?->toDateString(),
 
             'description' => $this->description,
