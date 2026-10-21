@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureLegalAccepted
 {
-    private const ALLOWED = ['api/auth/*', 'api/legal/*', 'api/user'];
+    private const ALLOWED = ['api/auth/*', 'api/legal/*', 'api/user', 'api/user/session/*'];
 
     public function __construct(
         private LegalService $legal
