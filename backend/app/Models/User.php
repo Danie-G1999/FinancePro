@@ -33,7 +33,18 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'onboarding_completed_at' => 'datetime',
+            'password_changed_at' => 'datetime',
         ];
+    }
+
+    // Registra cuándo cambió la contraseña (registro, perfil, seeder...), sea cual sea el origen.
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if ($user->isDirty('password')) {
+                $user->password_changed_at = $user->password === null ? null : now();
+            }
+        });
     }
 
     public function accounts(): HasMany
