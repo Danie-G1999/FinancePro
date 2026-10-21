@@ -75,4 +75,12 @@ class Debt extends Model
         return (int) ($this->payments_count
             ?? $this->payments()->count());
     }
+
+    /** Con pagos registrados, cambiar la moneda los dejaría en otra moneda que la deuda. */
+    public function currencyLocked(): bool
+    {
+        return array_key_exists('payments_count', $this->attributes)
+            ? $this->payments_count > 0
+            : $this->payments()->exists();
+    }
 }

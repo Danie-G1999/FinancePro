@@ -6,6 +6,7 @@ use App\Modules\Accounts\Interfaces\AccountRepositoryInterface;
 use App\Shared\Services\BaseService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 class AccountService extends BaseService
 {
@@ -41,6 +42,12 @@ class AccountService extends BaseService
     ): Model {
         $account = $this->findForUser($userId, $id);
 
+        $this->ensureCurrencyCanChange(
+            $account,
+            $data,
+            'No puedes cambiar la moneda: esta cuenta ya tiene movimientos o ingresos programados.'
+        );
+
         return $this->repository->update($account->getKey(), $data);
     }
 
@@ -49,5 +56,17 @@ class AccountService extends BaseService
         $account = $this->findForUser($userId, $id);
 
         return $this->repository->delete($account->getKey());
+    }
+
+    /** La moneda solo se puede corregir mientras no haya datos que dependan de ella. */
+    private function ensureCurrencyCanChange(Model $model, array $data, string $message): void
+    {
+        if (
+            array_key_exists('currency', $data)
+            && strtoupper((string) $data['currency']) !== $model->currency
+            && $model->currencyLocked()
+        ) {
+            throw ValidationException::withMessages(['currency' => $message]);
+        }
     }
 }

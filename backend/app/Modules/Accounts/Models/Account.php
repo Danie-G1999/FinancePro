@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Modules\Income\Models\Income;
 use App\Modules\Expenses\Models\Expense;
+use App\Modules\Income\Models\RecurringIncome;
 use App\Modules\Accounts\database\factories\AccountFactory;
 
 class Account extends Model
@@ -72,5 +73,32 @@ class Account extends Model
                 - (float) $expenses,
             2
         );
+    }
+
+    public function recurringIncomes(): HasMany
+    {
+        return $this->hasMany(RecurringIncome::class);
+    }
+
+    /**
+     * Los ingresos y gastos no guardan moneda propia: usan la de su cuenta. Con movimientos
+     * (o ingresos programados) cambiarla "convertiría" esos valores sin tipo de cambio.
+     * Usa los totales ya cargados en los listados para no consultar fila por fila.
+     */
+    public function currencyLocked(): bool
+    {
+        $hasIncomes = array_key_exists('incomes_sum_amount', $this->attributes)
+            ? $this->incomes_sum_amount !== null
+            : $this->incomes()->exists();
+
+        $hasExpenses = array_key_exists('expenses_sum_amount', $this->attributes)
+            ? $this->expenses_sum_amount !== null
+            : $this->expenses()->exists();
+
+        $hasSchedules = array_key_exists('recurring_incomes_count', $this->attributes)
+            ? $this->recurring_incomes_count > 0
+            : $this->recurringIncomes()->exists();
+
+        return $hasIncomes || $hasExpenses || $hasSchedules;
     }
 }

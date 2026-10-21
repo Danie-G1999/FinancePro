@@ -6,6 +6,7 @@ use App\Modules\Goals\Interfaces\GoalRepositoryInterface;
 use App\Shared\Services\BaseService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
 class GoalService extends BaseService
 {
@@ -36,6 +37,12 @@ class GoalService extends BaseService
     {
         $goal = $this->findForUser($userId, $id);
 
+        $this->ensureCurrencyCanChange(
+            $goal,
+            $data,
+            'No puedes cambiar la moneda: esta meta ya tiene aportes.'
+        );
+
         return $this->repository->update($goal->getKey(), $data);
     }
 
@@ -44,5 +51,17 @@ class GoalService extends BaseService
         $goal = $this->findForUser($userId, $id);
 
         return $this->repository->delete($goal->getKey());
+    }
+
+    /** La moneda solo se puede corregir mientras no haya datos que dependan de ella. */
+    private function ensureCurrencyCanChange(Model $model, array $data, string $message): void
+    {
+        if (
+            array_key_exists('currency', $data)
+            && strtoupper((string) $data['currency']) !== $model->currency
+            && $model->currencyLocked()
+        ) {
+            throw ValidationException::withMessages(['currency' => $message]);
+        }
     }
 }

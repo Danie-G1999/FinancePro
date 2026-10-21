@@ -293,9 +293,9 @@ function handleCancel() {
                 v-model="form.currency"
                 class="form-input"
                 :class="{ 'input-error': errors.currency }"
-                :disabled="loading"
+                :disabled="loading || account?.currency_locked"
             >
-<option
+                <option
                     v-for="option in CURRENCIES"
                     :key="option.code"
                     :value="option.code"
@@ -309,6 +309,14 @@ function handleCancel() {
                 class="form-error"
             >
                 {{ errors.currency }}
+            </span>
+
+            <!-- Sus ingresos y gastos usan la moneda de la cuenta: cambiarla alteraría los valores. -->
+            <span
+                v-else-if="account?.currency_locked"
+                class="form-help"
+            >
+                La moneda no se puede cambiar porque la cuenta ya tiene movimientos o ingresos programados.
             </span>
         </div>
 

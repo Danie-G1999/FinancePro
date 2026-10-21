@@ -21,6 +21,7 @@ class AccountRepository extends BaseRepository implements AccountRepositoryInter
             ->newQuery()
             ->withSum('incomes', 'amount')
             ->withSum('expenses', 'amount')
+            ->withCount('recurringIncomes')
             ->where('user_id', $userId)
             ->orderBy('name')
             ->get();

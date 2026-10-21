@@ -31,6 +31,8 @@ class AccountResource extends JsonResource
 
             'currency' => $this->currency,
 
+            'currency_locked' => $this->currencyLocked(),
+
             'is_active' => $this->is_active,
 
             'description' => $this->description,

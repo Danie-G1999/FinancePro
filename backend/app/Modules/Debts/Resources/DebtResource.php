@@ -42,6 +42,8 @@ class DebtResource extends JsonResource
 
             'currency' => $this->currency,
 
+            'currency_locked' => $this->currencyLocked(),
+
             'paid_amount' => number_format($this->paidAmount(), 2, '.', ''),
 
             'remaining_balance' => number_format($this->remainingBalance(), 2, '.', ''),

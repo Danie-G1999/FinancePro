@@ -239,9 +239,9 @@ function handleCancel() {
                 id="debt-currency"
                 v-model="form.currency"
                 class="form-input"
-                :disabled="loading"
+                :disabled="loading || debt?.currency_locked"
             >
-<option
+                <option
                     v-for="option in CURRENCIES"
                     :key="option.code"
                     :value="option.code"
@@ -249,6 +249,13 @@ function handleCancel() {
                     {{ option.code }} - {{ option.name }}
                 </option>
             </select>
+
+            <span
+                v-if="debt?.currency_locked"
+                class="form-help"
+            >
+                La moneda no se puede cambiar porque la deuda ya tiene pagos registrados.
+            </span>
         </div>
 
         <div class="form-group">
