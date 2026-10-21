@@ -65,7 +65,7 @@
 
     gap: 14px;
 
-    padding: 0 20px 18px;
+    padding: 20px 20px 18px;
 
     border-radius: 16px;
 
@@ -116,26 +116,6 @@
 .tour-card.placement-top::before {
     bottom: -7px;
     left: calc(var(--arrow-offset) - 7px);
-}
-
-.tour-progress {
-    height: 4px;
-
-    margin: 0 -20px;
-
-    overflow: hidden;
-
-    border-radius: 16px 16px 0 0;
-
-    background: var(--color-border-light);
-}
-
-.tour-progress-bar {
-    height: 100%;
-
-    background: linear-gradient(90deg, #2563eb, #60a5fa);
-
-    transition: width 0.4s ease;
 }
 
 .tour-content {
@@ -344,8 +324,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .tour-spotlight,
-    .tour-card,
-    .tour-progress-bar {
+    .tour-card {
         transition: none;
     }
 

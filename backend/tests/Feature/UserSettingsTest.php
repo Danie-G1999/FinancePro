@@ -227,4 +227,43 @@ class UserSettingsTest extends TestCase
         $this->getJson('/api/user/settings')->assertUnauthorized();
         $this->putJson('/api/user/settings', $this->payload())->assertUnauthorized();
     }
+
+    public function test_heartbeat_keeps_an_active_ui_session_alive(): void
+    {
+        // El usuario lleva 4 min usando la interfaz sin peticiones a la API (p. ej. leyendo
+        // el recorrido guiado): el heartbeat renueva la actividad en el servidor.
+        $this->actingAs($this->user)
+            ->fromBrowser()
+            ->withSession([EnforceInactivityTimeout::SESSION_KEY => now()->subMinutes(4)->getTimestamp()])
+            ->postJson('/api/user/session/heartbeat')
+            ->assertNoContent()
+            ->assertSessionHas(EnforceInactivityTimeout::SESSION_KEY, now()->getTimestamp());
+
+        // 4 minutos después (8 desde la última petición "real") la sesión sigue viva.
+        $this->travel(4)->minutes();
+
+        $this->fromBrowser()
+            ->postJson('/api/auth/onboarding/complete')
+            ->assertSuccessful();
+    }
+
+    public function test_heartbeat_cannot_revive_an_expired_session(): void
+    {
+        $this->actingAs($this->user)
+            ->fromBrowser()
+            ->withSession([EnforceInactivityTimeout::SESSION_KEY => now()->subMinutes(6)->getTimestamp()])
+            ->postJson('/api/user/session/heartbeat')
+            ->assertUnauthorized()
+            ->assertJsonPath('code', 'session_inactive');
+    }
+
+    public function test_heartbeat_works_while_the_legal_acceptance_is_pending(): void
+    {
+        $pending = User::factory()->withoutLegalAcceptance()->create();
+
+        $this->actingAs($pending)
+            ->fromBrowser()
+            ->postJson('/api/user/session/heartbeat')
+            ->assertNoContent();
+    }
 }

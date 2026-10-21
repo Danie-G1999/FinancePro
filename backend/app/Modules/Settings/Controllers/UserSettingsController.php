@@ -23,6 +23,12 @@ class UserSettingsController extends Controller
         ))->response()->setStatusCode(200);
     }
 
+    /** La renovación la hace EnforceInactivityTimeout; aquí no hay nada más que hacer. */
+    public function heartbeat(): JsonResponse
+    {
+        return response()->json(null, 204);
+    }
+
     public function update(UpdateUserSettingsRequest $request): JsonResponse
     {
         $settings = $this->settings->update($request->user()->id, $request->settings());

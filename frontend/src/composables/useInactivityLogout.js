@@ -1,5 +1,6 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
+import api from '../api/axios'
 import { useAuthStore } from '../modules/Auth/stores/authStore'
 
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'click', 'scroll', 'touchstart', 'wheel']
@@ -14,6 +15,10 @@ const WARNING_SECONDS = 60
 
 // No escribir en cada movimiento del mouse.
 const WRITE_THROTTLE_MS = 5000
+
+// El servidor solo ve peticiones a la API: mientras el usuario usa la interfaz sin hacerlas
+// (leer el recorrido, llenar un formulario largo) se le avisa que sigue activo.
+const HEARTBEAT_MAX_MS = 60 * 1000
 
 function readShared() {
     try {
@@ -50,8 +55,19 @@ export function useInactivityLogout() {
 
     let lastActivity = Date.now()
     let lastWrite = 0
+    let lastHeartbeat = Date.now()
     let timer = null
     let loggingOut = false
+
+    // Varias veces dentro del límite, para que el servidor nunca vea la sesión como abandonada.
+    const heartbeatEvery = computed(() => Math.min(HEARTBEAT_MAX_MS, timeoutMs.value / 3))
+
+    function sendHeartbeat(now) {
+        lastHeartbeat = now
+
+        // Un 401 (sesión ya vencida en el servidor) lo maneja el interceptor: lleva al login.
+        api.post('/user/session/heartbeat').catch(() => {})
+    }
 
     function registerActivity() {
         const now = Date.now()
@@ -61,6 +77,10 @@ export function useInactivityLogout() {
         if (now - lastWrite > WRITE_THROTTLE_MS) {
             lastWrite = now
             writeShared(now)
+        }
+
+        if (!loggingOut && now - lastHeartbeat >= heartbeatEvery.value) {
+            sendHeartbeat(now)
         }
     }
 
@@ -99,6 +119,7 @@ export function useInactivityLogout() {
         stop()
 
         lastActivity = Date.now()
+        lastHeartbeat = lastActivity
         writeShared(lastActivity)
 
         ACTIVITY_EVENTS.forEach((event) =>
@@ -122,6 +143,8 @@ export function useInactivityLogout() {
     // "Seguir conectado" en el aviso.
     function stayConnected() {
         lastWrite = 0
+        // Confirmación explícita: se avisa al servidor aunque haya pasado poco desde el último aviso.
+        lastHeartbeat = 0
         registerActivity()
         check()
     }

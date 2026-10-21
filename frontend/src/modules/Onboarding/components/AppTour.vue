@@ -34,7 +34,6 @@ const position = ref({ top: 0, left: 0, placement: 'center', arrow: 0 })
 const step = computed(() => steps.value[Math.min(index.value, steps.value.length - 1)])
 const isFirst = computed(() => index.value === 0)
 const isLast = computed(() => index.value === steps.value.length - 1)
-const progress = computed(() => (index.value / (steps.value.length - 1)) * 100)
 
 const firstName = computed(() => authStore.user?.name?.trim().split(/\s+/)[0] ?? '')
 
@@ -291,13 +290,6 @@ onBeforeUnmount(() => {
                     aria-labelledby="tour-title"
                     aria-describedby="tour-body"
                 >
-                    <div class="tour-progress">
-                        <div
-                            class="tour-progress-bar"
-                            :style="{ width: `${progress}%` }"
-                        ></div>
-                    </div>
-
                     <!-- Al terminar de entrar el paso nuevo, la tarjeta ya tiene su alto real. -->
                     <Transition
                         name="tour-step"
