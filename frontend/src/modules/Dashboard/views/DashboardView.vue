@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted } from 'vue'
+import { useCurrencyFormatter } from '../../../composables/useCurrencyFormatter'
 
 import { useAuthStore } from '../../Auth/stores/authStore'
 import { useDashboardStore } from '../stores/dashboardStore'
@@ -17,7 +18,10 @@ const formattedDate = computed(() => {
     }).format(new Date())
 })
 
-const currency = computed(() => dashboardStore.data?.currency ?? 'COP')
+// El backend ya elige la moneda preferida; mientras carga se usa la del usuario.
+const { preferredCurrency } = useCurrencyFormatter()
+
+const currency = computed(() => dashboardStore.data?.currency ?? preferredCurrency.value)
 
 const summary = computed(() => dashboardStore.data?.summary ?? null)
 

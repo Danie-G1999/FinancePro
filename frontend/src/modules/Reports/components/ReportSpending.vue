@@ -1,7 +1,10 @@
 <script setup>
 import { computed } from 'vue'
+import { useBudgetTypes } from '../../ExpenseCategories/utils/budgetTypes'
 
 import { formatMoney } from '../../../utils/money'
+
+const { ruleLabel } = useBudgetTypes()
 
 const props = defineProps({
     spending: {
@@ -42,7 +45,7 @@ function exceedsRecommendation(block) {
             <div>
                 <h3>¿En qué se va tu dinero?</h3>
 
-                <p>Distribución de tus salidas según la regla 50/30/20.</p>
+                <p>Distribución de tus salidas según tu reparto {{ ruleLabel }}.</p>
             </div>
 
             <strong>{{ money(spending.total) }}</strong>

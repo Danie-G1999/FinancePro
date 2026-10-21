@@ -3,7 +3,7 @@ import { reactive, ref, watch } from 'vue'
 
 import BaseModal from '../../../components/common/BaseModal.vue'
 import IconPicker from './IconPicker.vue'
-import { BUDGET_TYPES, budgetTypeColor } from '../utils/budgetTypes'
+import { budgetTypeColor, useBudgetTypes } from '../utils/budgetTypes'
 
 const props = defineProps({
     category: {
@@ -19,6 +19,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['submit', 'cancel'])
+
+const { budgetTypes } = useBudgetTypes()
 
 const loading = ref(false)
 const errors = ref({})
@@ -136,7 +138,7 @@ function handleCancel() {
                     </option>
 
                     <option
-                        v-for="type in BUDGET_TYPES"
+                        v-for="type in budgetTypes"
                         :key="type.value"
                         :value="type.value"
                     >

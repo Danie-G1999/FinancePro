@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import ExpenseCategoryFormModal from '../components/ExpenseCategoryFormModal.vue'
 import { useExpenseCategoryStore } from '../stores/expenseCategoryStore'
-import { BUDGET_TYPES } from '../utils/budgetTypes'
+import { useBudgetTypes } from '../utils/budgetTypes'
 import {
     confirmAction,
     extractErrorMessage,
@@ -14,6 +14,8 @@ import {
 
 const categoryStore = useExpenseCategoryStore()
 
+const { budgetTypes } = useBudgetTypes()
+
 const showForm = ref(false)
 
 const editingCategory = ref(null)
@@ -23,7 +25,7 @@ const defaultBudgetType = ref('')
 const showInactive = ref(false)
 
 const columns = computed(() =>
-    BUDGET_TYPES.map((type) => ({
+    budgetTypes.value.map((type) => ({
         ...type,
         categories: categoryStore.categories.filter(
             (category) =>

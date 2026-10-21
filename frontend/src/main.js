@@ -18,7 +18,7 @@ app.use(createPinia())
 app.use(router)
 
 // Sesión vencida mientras la app estaba abierta: vuelve al login sin dejar datos a la vista.
-window.addEventListener('auth:expired', () => {
+window.addEventListener('auth:expired', (event) => {
     const authStore = useAuthStore()
 
     if (!authStore.isAuthenticated) {
@@ -31,7 +31,10 @@ window.addEventListener('auth:expired', () => {
 
     router.replace({
         name: 'login',
-        query: current.meta.requiresAuth ? { redirect: current.fullPath, expired: '1' } : {},
+        query: {
+            ...(current.meta.requiresAuth && { redirect: current.fullPath }),
+            ...(event.detail?.reason === 'inactive' ? { reason: 'inactive' } : { expired: '1' }),
+        },
     })
 })
 

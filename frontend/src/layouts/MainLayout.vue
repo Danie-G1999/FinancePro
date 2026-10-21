@@ -6,6 +6,8 @@ import AppTopbar from '../components/layout/AppTopbar.vue'
 import { useLayoutStore } from '../components/layout/layoutStore'
 import AppTour from '../modules/Onboarding/components/AppTour.vue'
 import LegalGate from '../modules/Legal/components/LegalGate.vue'
+import InactivityWarning from '../modules/Settings/components/InactivityWarning.vue'
+import { useInactivityLogout } from '../composables/useInactivityLogout'
 import { useAuthStore } from '../modules/Auth/stores/authStore'
 
 const layout = useLayoutStore()
@@ -14,6 +16,9 @@ const authStore = useAuthStore()
 
 // Sin autorización vigente el backend rechaza todo; no se montan las páginas hasta aceptar.
 const legalPending = computed(() => (authStore.user?.legal?.pending?.length ?? 0) > 0)
+
+// Cierre automático por inactividad (si el usuario lo tiene activado en Configuración).
+const { showWarning, secondsLeft, stayConnected } = useInactivityLogout()
 </script>
 
 <template>
@@ -40,6 +45,12 @@ const legalPending = computed(() => (authStore.user?.legal?.pending?.length ?? 0
         <LegalGate v-if="legalPending" />
 
         <AppTour />
+
+        <InactivityWarning
+            v-if="showWarning"
+            :seconds-left="secondsLeft"
+            @stay="stayConnected"
+        />
     </div>
 </template>
 
