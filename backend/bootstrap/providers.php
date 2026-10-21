@@ -13,6 +13,7 @@ use App\Modules\Goals\GoalsServiceProvider;
 use App\Modules\Budgets\BudgetsServiceProvider;
 use App\Modules\Categories\CategoriesServiceProvider;
 use App\Modules\Legal\LegalServiceProvider;
+use App\Modules\Settings\SettingsServiceProvider;
 use App\Modules\Reports\ReportsServiceProvider;
 use App\Modules\Auth\Providers\AuthServiceProvider;
 
@@ -42,6 +43,8 @@ return [
     CategoriesServiceProvider::class,
 
     LegalServiceProvider::class,
+
+    SettingsServiceProvider::class,
 
     ReportsServiceProvider::class,
 

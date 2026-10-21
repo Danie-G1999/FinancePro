@@ -13,6 +13,7 @@ use App\Modules\Accounts\Models\Account;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Modules\Profile\Models\Profile;
+use App\Modules\Settings\Models\UserSetting;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token', 'google_id'])]
@@ -43,5 +44,10 @@ class User extends Authenticatable
     public function profile(): HasOne
     {
         return $this->hasOne(Profile::class);
+    }
+
+    public function settings(): HasOne
+    {
+        return $this->hasOne(UserSetting::class);
     }
 }
