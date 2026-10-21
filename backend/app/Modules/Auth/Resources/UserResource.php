@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'onboarding_completed' => $this->onboarding_completed_at !== null,
             'google_linked' => $this->google_id !== null,
             'has_password' => $this->password !== null,
+            'password_changed_at' => $this->password_changed_at?->toISOString(),
             'legal' => app(LegalService::class)->statusFor($this->resource),
             'settings' => (new UserSettingsResource(
                 app(UserSettingsService::class)->forUser($this->id)

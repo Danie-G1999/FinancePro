@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, reactive, ref } from 'vue'
 
 import { useAuthStore } from '../../Auth/stores/authStore'
 import { profileService } from '../services/profileService'
@@ -26,6 +26,60 @@ const visible = reactive({
 const loading = ref(false)
 const errors = ref({})
 const errorMessage = ref('')
+
+// Por defecto solo se ve el resumen; el formulario se abre con "Cambiar contraseña".
+const editing = ref(false)
+
+// Solo se conoce la fecha del último cambio: la contraseña y su hash nunca llegan al navegador.
+const changedAt = computed(() => {
+    const value = authStore.user?.password_changed_at
+
+    return value ? new Date(value) : null
+})
+
+const changedAtExact = computed(() =>
+    changedAt.value
+        ? new Intl.DateTimeFormat('es-CO', { dateStyle: 'long', timeStyle: 'short' }).format(changedAt.value)
+        : ''
+)
+
+const changedAtRelative = computed(() => {
+    if (!changedAt.value) {
+        return ''
+    }
+
+    const seconds = Math.round((changedAt.value.getTime() - Date.now()) / 1000)
+    const units = [
+        ['year', 60 * 60 * 24 * 365],
+        ['month', 60 * 60 * 24 * 30],
+        ['week', 60 * 60 * 24 * 7],
+        ['day', 60 * 60 * 24],
+        ['hour', 60 * 60],
+        ['minute', 60],
+    ]
+    const formatter = new Intl.RelativeTimeFormat('es', { numeric: 'auto' })
+
+    for (const [unit, size] of units) {
+        if (Math.abs(seconds) >= size) {
+            return formatter.format(Math.round(seconds / size), unit)
+        }
+    }
+
+    return 'hace un momento'
+})
+
+async function openForm() {
+    reset()
+    editing.value = true
+
+    await nextTick()
+    document.getElementById(hasPassword.value ? 'password-current' : 'password-new')?.focus()
+}
+
+function closeForm() {
+    reset()
+    editing.value = false
+}
 
 // Mismas reglas que valida el backend.
 const rules = computed(() => [
@@ -72,9 +126,9 @@ async function submit() {
             password_confirmation: form.password_confirmation,
         })
 
-        reset()
+        closeForm()
 
-        // Actualiza "has_password" (una cuenta de Google pasa a tener contraseña).
+        // Actualiza "has_password" y la fecha del último cambio.
         await authStore.fetchUser()
 
         showSuccess(response.message)
@@ -95,7 +149,54 @@ async function submit() {
 </script>
 
 <template>
+    <!-- RESUMEN -->
+
+    <div
+        v-if="!editing"
+        class="password-summary"
+    >
+        <div class="password-summary-info">
+            <span class="form-label">Contraseña</span>
+
+            <span
+                v-if="hasPassword"
+                class="password-dots"
+                aria-label="Contraseña configurada"
+            >
+                ••••••••••
+            </span>
+
+            <span v-else class="password-none">Sin contraseña</span>
+
+            <span class="form-help">
+                <template v-if="!hasPassword">
+                    Tu cuenta se creó con Google. Crea una contraseña para entrar también con tu correo.
+                </template>
+
+                <template v-else-if="changedAt">
+                    Actualizada <time :datetime="changedAt.toISOString()" :title="changedAtExact">{{ changedAtRelative }}</time>.
+                </template>
+
+                <template v-else>
+                    Aún no tenemos registro de cuándo la cambiaste por última vez.
+                </template>
+            </span>
+        </div>
+
+        <button
+            type="button"
+            class="btn btn-primary"
+            @click="openForm"
+        >
+            {{ hasPassword ? 'Cambiar contraseña' : 'Crear contraseña' }}
+        </button>
+    </div>
+
+
+    <!-- FORMULARIO -->
+
     <form
+        v-else
         class="password-form"
         novalidate
         @submit.prevent="submit"
@@ -251,9 +352,9 @@ async function submit() {
                 type="button"
                 class="btn btn-secondary"
                 :disabled="loading"
-                @click="reset"
+                @click="closeForm"
             >
-                Limpiar
+                Cancelar
             </button>
 
             <button

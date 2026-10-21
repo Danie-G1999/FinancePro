@@ -171,4 +171,53 @@ class PasswordChangeTest extends TestCase
             'password_confirmation' => 'nueva4567',
         ])->assertUnauthorized();
     }
+
+    public function test_the_change_date_is_recorded_and_exposed_but_never_the_password(): void
+    {
+        $this->travel(-10)->days();
+        $user = User::factory()->create(['password' => 'actual123']);
+        $this->travelBack();
+
+        $this->assertTrue($user->fresh()->password_changed_at->lt(now()->subDays(9)));
+
+        $this->actingAs($user)->putJson('/api/profile/password', [
+            'current_password' => 'actual123',
+            'password' => 'nueva4567',
+            'password_confirmation' => 'nueva4567',
+        ])->assertOk();
+
+        $this->assertTrue($user->fresh()->password_changed_at->gte(now()->subMinute()));
+
+        $me = $this->getJson('/api/auth/me')
+            ->assertJsonPath('data.has_password', true)
+            ->assertJsonMissingPath('data.password')
+            ->json('data');
+
+        $this->assertNotNull($me['password_changed_at']);
+
+        // Ni la contraseña ni su hash aparecen en ninguna respuesta de la cuenta.
+        foreach (['/api/auth/me', '/api/profile'] as $url) {
+            $body = $this->getJson($url)->getContent();
+
+            $this->assertStringNotContainsString($user->fresh()->password, $body);
+            $this->assertStringNotContainsString('$2y$', $body);
+        }
+    }
+
+    public function test_registering_records_the_date_and_google_accounts_have_none(): void
+    {
+        $this->postJson('/api/auth/register', [
+            'name' => 'Ana',
+            'email' => 'ana@correo.com',
+            'password' => 'secreta123',
+            'password_confirmation' => 'secreta123',
+            'accept_terms' => true,
+            'accept_privacy' => true,
+        ])->assertCreated();
+
+        $this->assertNotNull(User::firstWhere('email', 'ana@correo.com')->password_changed_at);
+
+        $google = User::factory()->create(['password' => null, 'google_id' => 'g-1']);
+        $this->assertNull($google->password_changed_at);
+    }
 }
