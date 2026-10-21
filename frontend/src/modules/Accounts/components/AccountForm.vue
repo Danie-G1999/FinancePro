@@ -1,5 +1,10 @@
 <script setup>
 import { reactive, ref } from 'vue'
+import { CURRENCIES } from '../../../utils/currencies'
+import { useCurrencyFormatter } from '../../../composables/useCurrencyFormatter'
+
+// Las nuevas cuentas, deudas y metas usan la moneda preferida del usuario.
+const { preferredCurrency } = useCurrencyFormatter()
 
 const props = defineProps({
     account: {
@@ -18,7 +23,7 @@ const form = reactive({
     type: props.account?.type ?? 'bank',
     institution: props.account?.institution ?? '',
     initial_balance: props.account?.initial_balance ?? '',
-    currency: props.account?.currency ?? 'COP',
+    currency: props.account?.currency ?? preferredCurrency.value,
     is_active: props.account?.is_active ?? true,
     description: props.account?.description ?? '',
 })
@@ -290,16 +295,12 @@ function handleCancel() {
                 :class="{ 'input-error': errors.currency }"
                 :disabled="loading"
             >
-                <option value="COP">
-                    COP - Peso colombiano
-                </option>
-
-                <option value="USD">
-                    USD - Dólar estadounidense
-                </option>
-
-                <option value="EUR">
-                    EUR - Euro
+<option
+                    v-for="option in CURRENCIES"
+                    :key="option.code"
+                    :value="option.code"
+                >
+                    {{ option.code }} - {{ option.name }}
                 </option>
             </select>
 

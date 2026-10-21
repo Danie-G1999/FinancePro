@@ -33,6 +33,8 @@ function goToDashboard() {
 
 const sessionExpired = ref(route.query.expired === '1')
 
+const closedForInactivity = ref(route.query.reason === 'inactive')
+
 const googleEnabled = ref(false)
 
 // Errores con los que el backend devuelve al usuario desde Google (?error=...).
@@ -47,8 +49,8 @@ const googleError = ref(GOOGLE_ERRORS[route.query.error] ?? '')
 
 onMounted(async () => {
     // Limpia los avisos de la URL para que no reaparezcan al recargar (conserva ?redirect).
-    if (route.query.error || route.query.expired) {
-        const { error, expired, ...rest } = route.query
+    if (route.query.error || route.query.expired || route.query.reason) {
+        const { error, expired, reason, ...rest } = route.query
 
         router.replace({ name: route.name, query: rest })
     }
@@ -81,6 +83,14 @@ onMounted(async () => {
                 role="alert"
             >
                 No pudimos conectar con el servidor. Revisa tu conexión o inténtalo en unos minutos.
+            </div>
+
+            <div
+                v-else-if="closedForInactivity"
+                class="session-notice"
+                role="status"
+            >
+                Tu sesión ha expirado por inactividad.
             </div>
 
             <div

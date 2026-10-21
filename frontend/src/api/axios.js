@@ -25,7 +25,9 @@ api.interceptors.response.use(
         const url = error.config?.url ?? ''
 
         if (error.response?.status === 401 && !AUTH_PATHS.some((path) => url.endsWith(path))) {
-            window.dispatchEvent(new CustomEvent('auth:expired'))
+            const reason = error.response.data?.code === 'session_inactive' ? 'inactive' : 'expired'
+
+            window.dispatchEvent(new CustomEvent('auth:expired', { detail: { reason } }))
         }
 
         return Promise.reject(error)

@@ -8,7 +8,7 @@ import {
     numberToMoneyInput,
 } from '../../../utils/money'
 import { classifyExpense, suggestCategory } from '../utils/classifyExpense'
-import { BUDGET_TYPES } from '../../ExpenseCategories/utils/budgetTypes'
+import { useBudgetTypes } from '../../ExpenseCategories/utils/budgetTypes'
 
 const props = defineProps({
     expense: {
@@ -39,6 +39,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['submit', 'cancel'])
+
+const { budgetTypes, ruleLabel } = useBudgetTypes()
 
 const loading = ref(false)
 const errors = ref({})
@@ -780,7 +782,7 @@ function handleCancel() {
                         class="info-tip"
                         tabindex="0"
                         role="note"
-                        aria-label="Información sobre la regla 50/30/20"
+                        :aria-label="`Información sobre tu reparto ${ruleLabel}`"
                     >
                         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="9" />
@@ -789,11 +791,12 @@ function handleCancel() {
                         </svg>
 
                         <span class="info-tip-content">
-                            Aplicamos la regla 50/30/20 sobre tus ingresos:
+                            Aplicamos tu reparto {{ ruleLabel }} sobre tus ingresos:
                             <br>
-                            50% necesidades <br>30% deseos <br>20% ahorro y
-                            metas. <br>Los pagos de deuda y aportes a metas se
-                            clasifican automáticamente.
+                            {{ budgetTypes[0].percent }}% necesidades <br>{{ budgetTypes[1].percent }}% deseos
+                            <br>{{ budgetTypes[2].percent }}% ahorro y metas. <br>Los pagos de deuda y
+                            aportes a metas se clasifican automáticamente. Puedes cambiar el reparto en
+                            Configuración.
                         </span>
                     </span>
                 </label>
@@ -811,7 +814,7 @@ function handleCancel() {
                     </option>
 
                     <option
-                        v-for="type in BUDGET_TYPES"
+                        v-for="type in budgetTypes"
                         :key="type.value"
                         :value="type.value"
                     >

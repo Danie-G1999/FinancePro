@@ -53,6 +53,21 @@ const pageTitles = {
         title: 'Reportes',
         subtitle: 'Analiza tu información financiera',
     },
+
+    'categorias-gasto': {
+        title: 'Categorías de gasto',
+        subtitle: 'Organiza tus gastos por bloque',
+    },
+
+    profile: {
+        title: 'Mi perfil',
+        subtitle: 'Tu información personal',
+    },
+
+    settings: {
+        title: 'Configuración',
+        subtitle: 'Preferencias y seguridad',
+    },
 }
 
 const currentPage = computed(() => {

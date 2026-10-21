@@ -117,7 +117,8 @@ export const useAuthStore = defineStore(
 
         // Cierra la sesión y recarga en /login: borra de memoria todos los datos del
         // usuario (stores de Pinia) y cualquier dato de la app en el navegador.
-        async function logoutAndRedirect() {
+        // reason: 'inactive' muestra en el login "Tu sesión ha expirado por inactividad."
+        async function logoutAndRedirect(reason = null) {
             await logout()
 
             try {
@@ -126,7 +127,18 @@ export const useAuthStore = defineStore(
                 // Navegación privada o almacenamiento bloqueado: no hay nada que limpiar.
             }
 
-            window.location.replace('/login')
+            window.location.replace(reason ? `/login?reason=${reason}` : '/login')
+        }
+
+        // Guarda la configuración del usuario; la app la lee de user.settings.
+        async function updateSettings(data) {
+            const response = await api.put('/user/settings', data)
+
+            if (user.value) {
+                user.value = { ...user.value, settings: response.data.data }
+            }
+
+            return response.data
         }
 
         return {
@@ -143,6 +155,7 @@ export const useAuthStore = defineStore(
             fetchUser,
             completeOnboarding,
             acceptLegal,
+            updateSettings,
         }
     }
 )

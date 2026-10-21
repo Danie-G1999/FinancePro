@@ -1,5 +1,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useBudgetTypes } from '../../ExpenseCategories/utils/budgetTypes'
+
+const { ruleLabel } = useBudgetTypes()
 
 import BaseModal from '../../../components/common/BaseModal.vue'
 import BudgetFormula from '../components/BudgetFormula.vue'
@@ -195,7 +198,7 @@ onMounted(() => {
                 </h1>
 
                 <p class="page-description">
-                    Organiza tus ingresos con la regla 50/30/20 y sigue tus metas de ahorro.
+                    Organiza tus ingresos con tu reparto {{ ruleLabel }} y sigue tus metas de ahorro.
                 </p>
             </div>
 

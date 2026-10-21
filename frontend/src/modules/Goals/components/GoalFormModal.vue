@@ -1,5 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
+import { CURRENCIES } from '../../../utils/currencies'
+import { useCurrencyFormatter } from '../../../composables/useCurrencyFormatter'
 
 import BaseModal from '../../../components/common/BaseModal.vue'
 import {
@@ -7,6 +9,9 @@ import {
     moneyInputToNumber,
     numberToMoneyInput,
 } from '../../../utils/money'
+
+// Las nuevas cuentas, deudas y metas usan la moneda preferida del usuario.
+const { preferredCurrency } = useCurrencyFormatter()
 
 const props = defineProps({
     goal: {
@@ -23,7 +28,7 @@ const errors = ref({})
 const form = reactive({
     name: props.goal?.name ?? '',
     target_amount: props.goal?.target_amount ?? '',
-    currency: props.goal?.currency ?? 'COP',
+    currency: props.goal?.currency ?? preferredCurrency.value,
     target_date: props.goal?.target_date ?? '',
     description: props.goal?.description ?? '',
 })
@@ -152,9 +157,13 @@ function handleCancel() {
                     class="form-input"
                     :disabled="loading || Boolean(goal)"
                 >
-                    <option value="COP">COP - Peso colombiano</option>
-                    <option value="USD">USD - Dólar estadounidense</option>
-                    <option value="EUR">EUR - Euro</option>
+<option
+                    v-for="option in CURRENCIES"
+                    :key="option.code"
+                    :value="option.code"
+                >
+                    {{ option.code }} - {{ option.name }}
+                </option>
                 </select>
 
                 <span v-if="goal" class="form-help">

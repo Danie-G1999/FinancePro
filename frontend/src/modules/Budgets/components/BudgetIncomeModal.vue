@@ -1,5 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
+import { CURRENCIES } from '../../../utils/currencies'
+import { useBudgetTypes } from '../../ExpenseCategories/utils/budgetTypes'
 
 import BaseModal from '../../../components/common/BaseModal.vue'
 import { formatMoney } from '../../../utils/money'
@@ -8,6 +10,8 @@ import {
     moneyInputToNumber,
     numberToMoneyInput,
 } from '../../../utils/money'
+
+const { ruleLabel } = useBudgetTypes()
 
 const props = defineProps({
     overview: {
@@ -91,7 +95,7 @@ function handleCancel() {
             @submit.prevent="handleSubmit"
         >
             <p class="hint">
-                La regla 50/30/20 se calcula sobre este valor. Si no lo
+                Tu reparto {{ ruleLabel }} se calcula sobre este valor. Si no lo
                 defines, se usan tus ingresos registrados en el mes
                 ({{ formatMoney(overview.income.registered, overview.currency) }}).
             </p>
@@ -135,9 +139,13 @@ function handleCancel() {
                     class="form-input"
                     :disabled="loading"
                 >
-                    <option value="COP">COP - Peso colombiano</option>
-                    <option value="USD">USD - Dólar estadounidense</option>
-                    <option value="EUR">EUR - Euro</option>
+<option
+                    v-for="option in CURRENCIES"
+                    :key="option.code"
+                    :value="option.code"
+                >
+                    {{ option.code }} - {{ option.name }}
+                </option>
                 </select>
 
                 <span class="form-help">

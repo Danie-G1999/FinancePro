@@ -4,7 +4,7 @@ import MainLayout from '../layouts/MainLayout.vue'
 
 import LoginView from '../modules/Auth/views/LoginView.vue'
 import ProfileView from '../modules/Profile/views/ProfileView.vue'
-import SettingsView from '../modules/Auth/views/SettingsView.vue'
+import SettingsView from '../modules/Settings/views/SettingsView.vue'
 
 import DashboardView from '../modules/Dashboard/views/DashboardView.vue'
 
