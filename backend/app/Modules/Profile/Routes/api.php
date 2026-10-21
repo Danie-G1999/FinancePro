@@ -8,4 +8,6 @@ Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
     Route::put('/', [ProfileController::class, 'update']);
     Route::post('/photo', [ProfileController::class, 'updatePhoto']);
     Route::delete('/photo', [ProfileController::class, 'destroyPhoto']);
+    Route::put('/password', [ProfileController::class, 'updatePassword'])
+        ->middleware('throttle:password-change');
 });

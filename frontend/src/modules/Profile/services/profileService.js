@@ -25,6 +25,13 @@ export const profileService = {
         return response.data
     },
 
+    // Si la cuenta no tiene contraseña (creada con Google) no se envía current_password.
+    async updatePassword(data) {
+        const response = await api.put('/profile/password', data)
+
+        return response.data
+    },
+
     async removePhoto() {
         const response = await api.delete('/profile/photo')
 

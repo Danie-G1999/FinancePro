@@ -20,6 +20,7 @@ class UserResource extends JsonResource
             'email_verified_at' => $this->email_verified_at,
             'onboarding_completed' => $this->onboarding_completed_at !== null,
             'google_linked' => $this->google_id !== null,
+            'has_password' => $this->password !== null,
             'legal' => app(LegalService::class)->statusFor($this->resource),
             'settings' => (new UserSettingsResource(
                 app(UserSettingsService::class)->forUser($this->id)

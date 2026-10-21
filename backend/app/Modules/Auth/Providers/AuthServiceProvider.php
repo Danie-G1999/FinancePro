@@ -47,6 +47,11 @@ class AuthServiceProvider extends ServiceProvider
         RateLimiter::for('oauth', fn (Request $request) => Limit::perMinute(self::LOGIN_ATTEMPTS_PER_MINUTE * 4)
             ->by('oauth:' . $request->ip()));
 
+        // Cambio de contraseña: frena a quien intente adivinar la actual con una sesión ajena.
+        RateLimiter::for('password-change', fn (Request $request) => Limit::perMinute(self::LOGIN_ATTEMPTS_PER_MINUTE)
+            ->by('password:' . ($request->user()?->getAuthIdentifier() ?? $request->ip()))
+            ->response(fn (Request $request, array $headers) => $this->tooManyAttempts($headers)));
+
         RateLimiter::for('register', fn (Request $request) => Limit::perHour(self::REGISTER_ATTEMPTS_PER_HOUR)
             ->by($request->ip())
             ->response(fn (Request $request, array $headers) => $this->tooManyAttempts($headers)));
