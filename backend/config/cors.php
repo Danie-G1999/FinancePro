@@ -22,11 +22,11 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Orígenes del frontend separados por coma. En producción: la URL de Vercel o tu dominio.
-    'allowed_origins' => array_filter(array_map('trim', explode(',', env(
-        'CORS_ALLOWED_ORIGINS',
-        'http://localhost:5173,http://127.0.0.1:5173'
-    )))),
+    // Une los orígenes por defecto de desarrollo con los que agregues en la variable de entorno de Railway
+    'allowed_origins' => array_merge(
+        ['http://localhost:5173', 'http://127.0.0.1:5173'], // Tus URLs locales fijas
+        array_filter(array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', ''))))
+    ),
 
     'allowed_origins_patterns' => [],
 
