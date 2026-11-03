@@ -259,7 +259,19 @@ onMounted(() => {
                 v-for="debt in debtStore.debts"
                 :key="debt.id"
                 class="debt-card"
+                :class="{ 'is-paid': debt.is_paid }"
             >
+
+                <div
+                    v-if="debt.is_paid"
+                    class="paid-ribbon"
+                >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 6 9 17l-5-5" />
+                    </svg>
+
+                    Deuda pagada
+                </div>
 
                 <div class="debt-card-header">
 

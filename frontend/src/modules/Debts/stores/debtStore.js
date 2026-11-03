@@ -30,7 +30,7 @@ export const useDebtStore = defineStore('debts', () => {
     async function createDebt(data) {
         const response = await debtService.create(data)
 
-        debts.value.push(response.data)
+        debts.value.unshift(response.data)
 
         return response.data
     }

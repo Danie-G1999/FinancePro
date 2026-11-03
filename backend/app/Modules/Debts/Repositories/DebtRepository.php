@@ -23,9 +23,8 @@ class DebtRepository extends BaseRepository implements DebtRepositoryInterface
             ->withSum('payments', 'amount')
             ->withCount('payments')
             ->where('user_id', $userId)
-            ->orderByRaw('due_date IS NULL')
-            ->orderBy('due_date')
-            ->orderBy('name')
+            ->latest()
+            ->orderByDesc('id')
             ->get();
     }
 
