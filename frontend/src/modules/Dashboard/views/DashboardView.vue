@@ -59,6 +59,57 @@ function formatDate(value) {
     return `${day}/${month}/${year}`
 }
 
+const accounts = computed(() => dashboardStore.data?.accounts ?? [])
+
+const isCurrentMonth = computed(
+    () => dashboardStore.period === dashboardStore.currentPeriod()
+)
+
+const isFiltered = computed(
+    () => !isCurrentMonth.value || dashboardStore.accountId !== null
+)
+
+const monthLabel = computed(() => {
+    const [year, month] = dashboardStore.period.split('-').map(Number)
+
+    const label = new Intl.DateTimeFormat('es-CO', {
+        month: 'long',
+        year: 'numeric',
+    }).format(new Date(year, month - 1, 1))
+
+    return label.charAt(0).toUpperCase() + label.slice(1)
+})
+
+const periodText = computed(() =>
+    isCurrentMonth.value ? 'Este mes' : monthLabel.value
+)
+
+const selectedAccountName = computed(
+    () => accounts.value.find((account) => account.id === dashboardStore.accountId)?.name ?? null
+)
+
+function shiftMonth(delta) {
+    const [year, month] = dashboardStore.period.split('-').map(Number)
+
+    const date = new Date(year, month - 1 + delta, 1)
+
+    const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+
+    dashboardStore.setFilters({ period })
+}
+
+function handlePeriodInput(event) {
+    if (event.target.value) {
+        dashboardStore.setFilters({ period: event.target.value })
+    }
+}
+
+function handleAccountChange(event) {
+    const value = event.target.value
+
+    dashboardStore.setFilters({ accountId: value ? Number(value) : null })
+}
+
 onMounted(() => {
     dashboardStore.fetchSummary()
 })
@@ -80,6 +131,75 @@ onMounted(() => {
             <span>
                 {{ formattedDate }}
             </span>
+        </div>
+
+        <div
+            v-if="dashboardStore.data"
+            class="filters"
+        >
+            <div class="period-nav">
+                <button
+                    type="button"
+                    class="icon-nav"
+                    aria-label="Mes anterior"
+                    :disabled="dashboardStore.loading"
+                    @click="shiftMonth(-1)"
+                >
+                    ‹
+                </button>
+
+                <label class="period-label">
+                    <span>{{ monthLabel }}</span>
+
+                    <input
+                        type="month"
+                        :value="dashboardStore.period"
+                        :max="dashboardStore.currentPeriod()"
+                        aria-label="Seleccionar mes"
+                        @change="handlePeriodInput"
+                    />
+                </label>
+
+                <button
+                    type="button"
+                    class="icon-nav"
+                    aria-label="Mes siguiente"
+                    :disabled="dashboardStore.loading || isCurrentMonth"
+                    @click="shiftMonth(1)"
+                >
+                    ›
+                </button>
+            </div>
+
+            <select
+                class="account-filter"
+                aria-label="Filtrar por cuenta"
+                :value="dashboardStore.accountId ?? ''"
+                :disabled="dashboardStore.loading"
+                @change="handleAccountChange"
+            >
+                <option value="">
+                    Todas las cuentas
+                </option>
+
+                <option
+                    v-for="account in accounts"
+                    :key="account.id"
+                    :value="account.id"
+                >
+                    {{ account.name }} ({{ account.currency }})
+                </option>
+            </select>
+
+            <button
+                v-if="isFiltered"
+                type="button"
+                class="clear-filters"
+                :disabled="dashboardStore.loading"
+                @click="dashboardStore.resetFilters()"
+            >
+                Limpiar filtros
+            </button>
         </div>
 
         <div
@@ -111,7 +231,11 @@ onMounted(() => {
 
                     <strong>{{ money(summary.total_balance) }}</strong>
 
-                    <small>
+                    <small v-if="selectedAccountName">
+                        Saldo actual de {{ selectedAccountName }}
+                    </small>
+
+                    <small v-else>
                         {{ summary.accounts_count }}
                         {{ summary.accounts_count === 1 ? 'cuenta activa' : 'cuentas activas' }}
                     </small>
@@ -129,7 +253,7 @@ onMounted(() => {
                     <strong>{{ money(summary.month_income) }}</strong>
 
                     <small>
-                        Este mes
+                        {{ periodText }}
                     </small>
                 </article>
 
@@ -145,7 +269,7 @@ onMounted(() => {
                     <strong>{{ money(summary.month_expense) }}</strong>
 
                     <small>
-                        Este mes
+                        {{ periodText }}
                     </small>
                 </article>
 
@@ -171,7 +295,10 @@ onMounted(() => {
                     <div class="panel-header">
                         <div>
                             <h3>Flujo de dinero</h3>
-                            <span>Ingresos vs. gastos · últimos 6 meses</span>
+                            <span>
+                                Ingresos vs. gastos ·
+                                {{ isCurrentMonth ? 'últimos 6 meses' : `6 meses hasta ${monthLabel}` }}
+                            </span>
                         </div>
 
                         <div class="legend">
@@ -239,7 +366,7 @@ onMounted(() => {
                     <div class="panel-header">
                         <div>
                             <h3>Resumen financiero</h3>
-                            <span>Este mes</span>
+                            <span>{{ periodText }}</span>
                         </div>
                     </div>
 
@@ -278,7 +405,12 @@ onMounted(() => {
                 <div class="panel-header">
                     <div>
                         <h3>Últimos movimientos</h3>
-                        <span>Actividad reciente</span>
+                        <span>
+                            {{ isCurrentMonth ? 'Actividad reciente' : `Actividad de ${monthLabel}` }}
+                            <template v-if="selectedAccountName">
+                                · {{ selectedAccountName }}
+                            </template>
+                        </span>
                     </div>
 
                     <div class="panel-actions">
@@ -343,11 +475,15 @@ onMounted(() => {
                     </div>
 
                     <strong>
-                        No hay movimientos registrados
+                        {{ isFiltered ? 'Sin movimientos con estos filtros' : 'No hay movimientos registrados' }}
                     </strong>
 
                     <span>
-                        Empieza agregando tu primer ingreso o gasto.
+                        {{
+                            isFiltered
+                                ? 'Prueba con otro mes u otra cuenta.'
+                                : 'Empieza agregando tu primer ingreso o gasto.'
+                        }}
                     </span>
                 </div>
             </article>
@@ -384,6 +520,98 @@ onMounted(() => {
 .welcome > span {
     color: #9ca3af;
     font-size: 11px;
+}
+
+.filters {
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.period-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.icon-nav {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #6b7280;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.icon-nav:hover:not(:disabled) {
+    background: #f9fafb;
+    color: #2563eb;
+}
+
+.icon-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.period-label {
+    position: relative;
+    min-width: 170px;
+    height: 36px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #111827;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.period-label input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.account-filter {
+    height: 36px;
+    min-width: 200px;
+    padding: 0 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #111827;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.account-filter:focus {
+    outline: 2px solid #bfdbfe;
+    border-color: #2563eb;
+}
+
+.clear-filters {
+    height: 36px;
+    padding: 0 12px;
+    border: 0;
+    background: transparent;
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.clear-filters:hover:not(:disabled) {
+    text-decoration: underline;
 }
 
 .state-container {
@@ -787,6 +1015,15 @@ onMounted(() => {
     .welcome {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .period-nav,
+    .account-filter {
+        width: 100%;
+    }
+
+    .period-label {
+        flex: 1;
     }
 
     .panel-header {
