@@ -3,9 +3,9 @@
 namespace App\Modules\Dashboard\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Dashboard\Requests\DashboardFilterRequest;
 use App\Modules\Dashboard\Services\DashboardService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -13,10 +13,14 @@ class DashboardController extends Controller
         private DashboardService $service
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(DashboardFilterRequest $request): JsonResponse
     {
         return response()->json([
-            'data' => $this->service->getSummary($request->user()->id),
+            'data' => $this->service->getSummary(
+                $request->user()->id,
+                $request->validated('period'),
+                $request->validated('account_id')
+            ),
         ]);
     }
 }

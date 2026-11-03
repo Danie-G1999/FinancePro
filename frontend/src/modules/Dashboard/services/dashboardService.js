@@ -1,8 +1,8 @@
 import api from '../../../api/axios'
 
 export const dashboardService = {
-    async getSummary() {
-        const response = await api.get('/dashboard')
+    async getSummary(filters = {}) {
+        const response = await api.get('/dashboard', { params: filters })
 
         return response.data
     },

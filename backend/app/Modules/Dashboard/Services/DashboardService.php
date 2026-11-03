@@ -18,33 +18,48 @@ class DashboardService
         private UserSettingsService $settings
     ) {}
 
-    public function getSummary(int $userId): array
+    /**
+     * @param  string|null  $period  Mes a consultar (Y-m); por defecto el actual.
+     * @param  int|null  $accountId  Limita ingresos, gastos y saldo a una cuenta activa.
+     */
+    public function getSummary(int $userId, ?string $period = null, ?int $accountId = null): array
     {
-        $accounts = $this->repository->getActiveAccounts($userId);
+        $activeAccounts = $this->repository->getActiveAccounts($userId);
         $debts = $this->repository->getDebts($userId);
 
-        // Totales en la moneda preferida del usuario (o la de la mayoría de sus cuentas).
-        $currency = $this->settings->summaryCurrency($userId, $accounts);
+        $selectedAccount = $accountId ? $activeAccounts->firstWhere('id', $accountId) : null;
+        $accounts = $selectedAccount ? collect([$selectedAccount]) : $activeAccounts;
 
-        $today = CarbonImmutable::today();
-        $firstMonth = $today->startOfMonth()->subMonths(self::MONTHS_IN_CHART - 1);
+        // Con una cuenta elegida se usa su moneda; si no, la preferida del usuario
+        // (o la de la mayoría de sus cuentas).
+        $currency = $selectedAccount?->currency
+            ?? $this->settings->summaryCurrency($userId, $activeAccounts);
+
+        $month = $period
+            ? CarbonImmutable::createFromFormat('!Y-m', $period)
+            : CarbonImmutable::today()->startOfMonth();
+
+        $firstMonth = $month->subMonths(self::MONTHS_IN_CHART - 1);
+        $lastDay = $month->endOfMonth()->toDateString();
 
         $incomes = $this->repository->getIncomeEntries(
             $userId,
             $currency,
             $firstMonth->toDateString(),
-            $today->endOfMonth()->toDateString()
+            $lastDay,
+            $selectedAccount?->id
         );
 
         $expenses = $this->repository->getExpenseEntries(
             $userId,
             $currency,
             $firstMonth->toDateString(),
-            $today->endOfMonth()->toDateString()
+            $lastDay,
+            $selectedAccount?->id
         );
 
         $cashFlow = $this->buildCashFlow($firstMonth, $incomes, $expenses);
-        $currentMonth = end($cashFlow);
+        $selectedMonth = end($cashFlow);
 
         $totalBalance = $accounts
             ->where('currency', $currency)
@@ -56,18 +71,34 @@ class DashboardService
 
         return [
             'currency' => $currency,
+            'filters' => [
+                'period' => $month->format('Y-m'),
+                'account_id' => $selectedAccount?->id,
+            ],
+            'accounts' => $activeAccounts
+                ->map(fn ($account) => [
+                    'id' => $account->id,
+                    'name' => $account->name,
+                    'currency' => $account->currency,
+                ])
+                ->values(),
             'summary' => [
                 'total_balance' => round($totalBalance, 2),
-                'month_income' => $currentMonth['income'],
-                'month_expense' => $currentMonth['expense'],
-                'month_balance' => round($currentMonth['income'] - $currentMonth['expense'], 2),
+                'month_income' => $selectedMonth['income'],
+                'month_expense' => $selectedMonth['expense'],
+                'month_balance' => round($selectedMonth['income'] - $selectedMonth['expense'], 2),
                 'pending_debt' => round($pendingDebt, 2),
                 'accounts_count' => $accounts->count(),
                 'debts_count' => $debts->where('currency', $currency)->count(),
             ],
             'cash_flow' => $cashFlow,
-            'recent_movements' => $this->repository
-                ->getRecentMovements($userId, self::RECENT_MOVEMENTS),
+            'recent_movements' => $this->repository->getRecentMovements(
+                $userId,
+                self::RECENT_MOVEMENTS,
+                $month->toDateString(),
+                $lastDay,
+                $selectedAccount?->id
+            ),
         ];
     }
 

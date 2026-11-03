@@ -19,6 +19,7 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->withSum('expenses', 'amount')
             ->where('user_id', $userId)
             ->where('is_active', true)
+            ->orderBy('name')
             ->get();
     }
 
@@ -35,25 +36,34 @@ class DashboardRepository implements DashboardRepositoryInterface
         int $userId,
         string $currency,
         string $from,
-        string $to
+        string $to,
+        ?int $accountId = null
     ): Collection {
-        return $this->entries(Income::query(), 'incomes', 'received_at', $userId, $currency, $from, $to);
+        return $this->entries(Income::query(), 'incomes', 'received_at', $userId, $currency, $from, $to, $accountId);
     }
 
     public function getExpenseEntries(
         int $userId,
         string $currency,
         string $from,
-        string $to
+        string $to,
+        ?int $accountId = null
     ): Collection {
-        return $this->entries(Expense::query(), 'expenses', 'spent_at', $userId, $currency, $from, $to);
+        return $this->entries(Expense::query(), 'expenses', 'spent_at', $userId, $currency, $from, $to, $accountId);
     }
 
-    public function getRecentMovements(int $userId, int $limit): Collection
-    {
+    public function getRecentMovements(
+        int $userId,
+        int $limit,
+        string $from,
+        string $to,
+        ?int $accountId = null
+    ): Collection {
         $incomes = Income::query()
             ->with('account:id,name,currency')
             ->where('user_id', $userId)
+            ->whereBetween('received_at', [$from, $to])
+            ->when($accountId, fn (Builder $query) => $query->where('account_id', $accountId))
             ->orderByDesc('received_at')
             ->orderByDesc('id')
             ->limit($limit)
@@ -72,6 +82,8 @@ class DashboardRepository implements DashboardRepositoryInterface
         $expenses = Expense::query()
             ->with('account:id,name,currency')
             ->where('user_id', $userId)
+            ->whereBetween('spent_at', [$from, $to])
+            ->when($accountId, fn (Builder $query) => $query->where('account_id', $accountId))
             ->orderByDesc('spent_at')
             ->orderByDesc('id')
             ->limit($limit)
@@ -102,13 +114,15 @@ class DashboardRepository implements DashboardRepositoryInterface
         int $userId,
         string $currency,
         string $from,
-        string $to
+        string $to,
+        ?int $accountId
     ): Collection {
         return $query
             ->join('accounts', 'accounts.id', '=', "{$table}.account_id")
             ->where("{$table}.user_id", $userId)
             ->where('accounts.currency', $currency)
             ->whereBetween("{$table}.{$dateColumn}", [$from, $to])
+            ->when($accountId, fn (Builder $q) => $q->where("{$table}.account_id", $accountId))
             ->get(["{$table}.{$dateColumn} as date", "{$table}.amount as amount"]);
     }
 }
